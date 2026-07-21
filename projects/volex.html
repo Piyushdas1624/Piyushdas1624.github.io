@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volex Case Study (DEV.to Winner) — Workout Tonnage Engine | Piyush Das</title>
+    <meta name="description" content="Technical Case Study on Volex: DEV.to April Fools Developer Challenge Winner workout volume tracking app built with pure JavaScript and IndexedDB.">
+    <link rel="canonical" href="https://piyushdas1624.github.io/projects/volex.html">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .diagram-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <header class="section hero" style="min-height: 35vh; padding-top: 3rem;">
+        <div class="container">
+            <a href="../index.html" class="link-btn" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-arrow-left"></i> Back to Portfolio</a>
+            <h1 class="gradient-text">🏆 Volex — Case Study</h1>
+            <p class="subtitle">DEV.to April Fools Developer Challenge Winner — Volume by Exercise Tracker</p>
+        </div>
+    </header>
+
+    <main class="container section" style="padding-top: 0;">
+        <div class="glass-card highlight-card" style="margin-bottom: 2rem;">
+            <h3>Overview & Official Recognition</h3>
+            <p style="margin-top: 0.5rem; color: var(--color-text-muted);">
+                <strong>Volex (Volume by Exercise)</strong> is a fitness tracking web application built for calculating workout volume ($Volume = Weight \times Reps \times Sets$) across exercise categories. It <strong>won top honors in the official DEV.to April Fools Developer Challenge</strong>.
+            </p>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="https://dev.to/devteam/congrats-to-the-april-fools-challenge-winners-l8f" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem; border-color: rgba(245, 158, 11, 0.4); color: #f59e0b;">
+                    <i class="fa-solid fa-trophy"></i> DEV.to Winner Announcement
+                </a>
+                <a href="https://piyushdas1624.github.io/volex/" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Live Demo App
+                </a>
+                <a href="https://dev.to/piyushdas1624/volex-volume-by-exercise-oi7" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem;">
+                    <i class="fa-brands fa-dev"></i> DEV.to Article & Video
+                </a>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>💪 Problem & Motivation</h4>
+                <p>Most gym tracking apps require complex account signups and suffer from cluttered ad-heavy interfaces. Volex was built to provide instant volume calculations with zero login overhead.</p>
+            </div>
+            <div class="glass-card">
+                <h4>⚡ Performance & Privacy</h4>
+                <p>Built using 100% vanilla JavaScript with zero framework dependencies. All data is persisted locally in the browser using IndexedDB, guaranteeing 100% data privacy and offline readiness during workouts.</p>
+            </div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 2rem;">
+            <h3>🏗️ Data Flow & Architecture</h3>
+            <div class="diagram-box">
+┌─────────────────┐       ┌───────────────────────┐       ┌──────────────────────┐
+│ Workout Set     │ ────► │ Real-Time Math        │ ────► │ IndexedDB Storage    │
+│ Input (Weight/R)│       │ (Volume Calculation)  │       │ (Local Logs)         │
+└─────────────────┘       └───────────────────────┘       └──────────┬───────────┘
+                                                                     │
+┌─────────────────┐                                                  │
+│ Muscle Group    │ ◄────────────────────────────────────────────────┘
+│ Tonnage Display │
+└─────────────────┘
+            </div>
+            <ul class="interest-list">
+                <li><strong>Dynamic Tonnage Math:</strong> Computes volume totals per muscle group instantly.</li>
+                <li><strong>IndexedDB Storage:</strong> Browser-native database for workout log persistence.</li>
+                <li><strong>Mobile-First UI:</strong> Large touch-friendly input fields designed for gym phone usage.</li>
+            </ul>
+        </div>
+
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>⚖️ Trade-offs</h4>
+                <p><strong>Trade-off:</strong> Using vanilla HTML/CSS/JS without React or Vue reduces bundle size to nearly zero, but requires writing custom DOM manipulation state logic.</p>
+            </div>
+            <div class="glass-card">
+                <h4>💡 Lessons Learned</h4>
+                <p>1. Building zero-dependency web utilities creates instantly loading apps that work everywhere.<br>
+                2. User experience shines when software focuses on doing one task exceptionally well.</p>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h3>📌 Planned Improvements</h3>
+            <ul class="interest-list">
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Export workout data to CSV / JSON files.</li>
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Progressive overload visual charts over time.</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Piyush Das (PiyushDas1624). <a href="../index.html" style="color: #a5b4fc;">Return to Portfolio</a></p>
+        </div>
+    </footer>
+</body>
+</html>

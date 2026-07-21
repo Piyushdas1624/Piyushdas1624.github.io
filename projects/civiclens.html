@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicLens AI Case Study — AI Civic Triage & Caching Pipeline | Piyush Das</title>
+    <meta name="description" content="Technical Case Study on CivicLens AI: AI-powered civic complaint reporting platform using React, FastAPI, and Gemini AI with intelligent semantic caching.">
+    <link rel="canonical" href="https://piyushdas1624.github.io/projects/civiclens.html">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .diagram-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <header class="section hero" style="min-height: 35vh; padding-top: 3rem;">
+        <div class="container">
+            <a href="../index.html" class="link-btn" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-arrow-left"></i> Back to Portfolio</a>
+            <h1 class="gradient-text">🏛️ CivicLens AI — Case Study</h1>
+            <p class="subtitle">AI-Powered Civic Complaint Classification & Routing Engine</p>
+        </div>
+    </header>
+
+    <main class="container section" style="padding-top: 0;">
+        <div class="glass-card highlight-card" style="margin-bottom: 2rem;">
+            <h3>Overview</h3>
+            <p style="margin-top: 0.5rem; color: var(--color-text-muted);">
+                <strong>CivicLens AI</strong> is a civic issue reporting platform developed for hackathons. It uses a <strong>React frontend</strong>, <strong>FastAPI backend</strong>, and <strong>Google Gemini AI</strong> to automatically categorize, evaluate severity, and route infrastructure issues (potholes, sanitation, power outages) to municipal departments.
+            </p>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="https://civiclens-ai-one.vercel.app" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Live Demo App
+                </a>
+                <a href="https://github.com/Piyushdas1624/civiclens-ai" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem;">
+                    <i class="fa-brands fa-github"></i> GitHub Repository
+                </a>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>🎯 Problem & Motivation</h4>
+                <p>Municipal complaint systems face backlogs due to manual triage. Citizens submit unstructured complaints without category tags or urgency scores, delaying dispatch teams.</p>
+            </div>
+            <div class="glass-card">
+                <h4>⚙️ Technical Constraints</h4>
+                <p>External LLM API calls add latency and financial cost during traffic spikes. Repeated submissions of similar issues (e.g. power outages in the same area) shouldn't re-trigger full AI parsing.</p>
+            </div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 2rem;">
+            <h3>🏗️ Architecture & Caching Strategy</h3>
+            <div class="diagram-box">
+┌─────────────────┐       ┌───────────────────────┐       ┌──────────────────────┐
+│ Citizen         │ ────► │ React Dashboard       │ ────► │ FastAPI Backend      │
+│ Complaint Input │       │ (Form & Image Upload) │       │ (Request Pipeline)   │
+└─────────────────┘       └───────────────────────┘       └──────────┬───────────┘
+                                                                     │
+┌─────────────────┐       ┌───────────────────────┐       ┌──────────┴───────────┐
+│ Route to Dept   │ ◄──── │ Gemini AI Classifier  │ ◄──── │ In-Memory Semantic   │
+│ & Priority Queue│       │ (Category & Urgency)  │       │ Cache Check (Hit/Miss│
+└─────────────────┘       └───────────────────────┘       └──────────────────────┘
+            </div>
+            <ul class="interest-list">
+                <li><strong>FastAPI Pipeline:</strong> Asynchronous backend router managing complaint submissions and status queries.</li>
+                <li><strong>Semantic Cache:</strong> Designed to intercept recurring issue descriptions, significantly reducing redundant external Gemini API calls.</li>
+                <li><strong>Gemini AI Classification:</strong> Assigns category, severity (Low/Medium/Critical), and department routing tags.</li>
+            </ul>
+        </div>
+
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>⚖️ Challenges & Trade-offs</h4>
+                <p><strong>Trade-off:</strong> Cache lifetime settings must balance latency savings with accuracy—overly aggressive caching risks miscategorizing unique complaints with similar wording.</p>
+            </div>
+            <div class="glass-card">
+                <h4>💡 Lessons Learned</h4>
+                <p>1. Implementing basic caching on AI endpoints is essential for hackathon scalability.<br>
+                2. Structuring LLM outputs with JSON mode enforces reliable frontend rendering.</p>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h3>📌 Planned Improvements</h3>
+            <ul class="interest-list">
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Map view integration for municipal issue clusters.</li>
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Automated status notifications via Webhooks.</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Piyush Das (PiyushDas1624). <a href="../index.html" style="color: #a5b4fc;">Return to Portfolio</a></p>
+        </div>
+    </footer>
+</body>
+</html>

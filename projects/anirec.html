@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniRec AI Case Study — Dual Gemini Engine & Anime Sync | Piyush Das</title>
+    <meta name="description" content="Technical Case Study on AniRec AI: Full-Stack AI anime recommendation platform orchestrating Google Gemini Pro, Gemini Flash, React, Node.js, and SQLite.">
+    <link rel="canonical" href="https://piyushdas1624.github.io/projects/anirec.html">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .diagram-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <header class="section hero" style="min-height: 35vh; padding-top: 3rem;">
+        <div class="container">
+            <a href="../index.html" class="link-btn" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-arrow-left"></i> Back to Portfolio</a>
+            <h1 class="gradient-text">⚡ AniRec AI — Case Study</h1>
+            <p class="subtitle">Full-Stack AI Anime Recommender & Personal Tracking Library</p>
+        </div>
+    </header>
+
+    <main class="container section" style="padding-top: 0;">
+        <!-- Overview -->
+        <div class="glass-card highlight-card" style="margin-bottom: 2rem;">
+            <h3>Overview</h3>
+            <p style="margin-top: 0.5rem; color: var(--color-text-muted);">
+                <strong>AniRec AI</strong> is a full-stack web application that combines natural language AI recommendations with personal anime library management. Built with <strong>React, TypeScript, Node.js, and SQLite</strong>, it uses <strong>Google Gemini Pro</strong> for narrative-driven recommendations and <strong>Gemini Flash</strong> for fast metadata extraction.
+            </p>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="https://github.com/Piyushdas1624/AniRec" target="_blank" rel="noopener" class="glass-btn" style="width: auto; padding: 0 1.25rem; gap: 0.5rem;">
+                    <i class="fa-brands fa-github"></i> GitHub Repository
+                </a>
+            </div>
+        </div>
+
+        <!-- Problem & Constraints Grid -->
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>🎯 Problem & Motivation</h4>
+                <p>Standard anime search platforms rely on rigid genre tags. Finding recommendations based on subtle narrative themes, character arcs, or specific pacing is difficult. I wanted an AI assistant capable of understanding natural language preferences.</p>
+            </div>
+            <div class="glass-card">
+                <h4>⚙️ Technical Constraints</h4>
+                <p>External anime APIs (AniList, MyAnimeList, Kitsu) enforce strict rate limits and return disparate data formats. Querying large AI models for simple search parsing introduces unnecessary latency.</p>
+            </div>
+        </div>
+
+        <!-- Architecture & Diagram -->
+        <div class="glass-card" style="margin-bottom: 2rem;">
+            <h3>🏗️ Architecture & Dual-AI Pipeline</h3>
+            <div class="diagram-box">
+┌─────────────────┐       ┌───────────────────────┐       ┌──────────────────────┐
+│  User Search    │ ────► │ Gemini Flash Engine   │ ────► │  API Normalizer      │
+│  Prompt         │       │ (Fast Entity Parsing) │       │ (AniList / MAL)      │
+└─────────────────┘       └───────────────────────┘       └──────────┬───────────┘
+                                                                     │
+┌─────────────────┐       ┌───────────────────────┐                  │
+│ Recommendation  │ ◄──── │ Gemini Pro Recommender│ ◄────────────────┘
+│ Output + Cards  │       │ (Contextual Reasoning)│
+└─────────────────┘       └───────────────────────┘
+            </div>
+            <ul class="interest-list">
+                <li><strong>Gemini Flash Engine:</strong> Extracts anime titles, genres, and intent from user search prompts at low latency.</li>
+                <li><strong>Gemini Pro Recommender:</strong> Evaluates user preferences against anime themes to generate personalized recommendations with explanation rationale.</li>
+                <li><strong>API Normalizer:</strong> Unifies external anime metadata structures into a consistent internal schema.</li>
+                <li><strong>SQLite Database:</strong> Local structured storage for watch-list persistence.</li>
+            </ul>
+        </div>
+
+        <!-- Challenges & Trade-offs -->
+        <div class="grid" style="margin-bottom: 2rem;">
+            <div class="glass-card">
+                <h4>⚖️ Challenges & Trade-offs</h4>
+                <p><strong>Trade-off:</strong> Using two separate LLM models (Flash + Pro) increases backend pipeline coordination, but drastically improves UI responsiveness compared to routing all queries through a single large model.</p>
+            </div>
+            <div class="glass-card">
+                <h4>💡 Lessons Learned</h4>
+                <p>1. Decoupling parsing from recommendation generation optimizes both speed and token cost.<br>
+                2. Building a central normalization layer upfront prevents UI state bugs when aggregating external APIs.</p>
+            </div>
+        </div>
+
+        <!-- Future Improvements -->
+        <div class="glass-card">
+            <h3>📌 Planned Improvements</h3>
+            <ul class="interest-list">
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Vector similarity search for instant offline recommendations.</li>
+                <li><span class="badge" style="background: rgba(255,255,255,0.05); color: #a5b4fc;">Planned</span> Export/Import watch-lists via JSON format.</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Piyush Das (PiyushDas1624). <a href="../index.html" style="color: #a5b4fc;">Return to Portfolio</a></p>
+        </div>
+    </footer>
+</body>
+</html>
