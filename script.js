@@ -1,34 +1,80 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Intersection Observer for Smooth Scroll Fade-in
-    const observerOptions = {
-        root: null,
-        rootMargin: "0px",
-        threshold: 0.15
+/* ==========================================================================
+   Piyush Das Portfolio — JavaScript
+   Scroll reveal, sticky nav, reduced-motion support
+   ========================================================================== */
+
+(function () {
+  'use strict';
+
+  // ── Respect prefers-reduced-motion ────────────────────────────────
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Sticky nav scroll behaviour ───────────────────────────────────
+  const nav = document.getElementById('main-nav');
+
+  if (nav) {
+    const handleNavScroll = () => {
+      if (window.scrollY > 20) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
+    window.addEventListener('scroll', handleNavScroll, { passive: true });
+    handleNavScroll(); // run once on load
+  }
+
+  // ── Scroll reveal with IntersectionObserver ───────────────────────
+  if (!prefersReducedMotion) {
+    const revealElements = document.querySelectorAll('.reveal');
+
+    if (revealElements.length > 0) {
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
             if (entry.isIntersecting) {
-                entry.target.classList.add("visible");
-                observer.unobserve(entry.target);
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
             }
-        });
-    }, observerOptions);
+          });
+        },
+        {
+          root: null,
+          rootMargin: '0px 0px -60px 0px',
+          threshold: 0.1,
+        }
+      );
 
-    const fadeElements = document.querySelectorAll(".fade-in-up");
-    fadeElements.forEach(el => observer.observe(el));
-
-    // 2. Interactive Spotlight Tracking for Glass Cards
-    const interactiveCards = document.querySelectorAll(".interactive-card");
-    
-    interactiveCards.forEach(card => {
-        card.addEventListener("mousemove", (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            card.style.setProperty("--mouse-x", `${x}px`);
-            card.style.setProperty("--mouse-y", `${y}px`);
-        });
+      revealElements.forEach((el) => revealObserver.observe(el));
+    }
+  } else {
+    // If reduced motion is preferred, just show everything immediately
+    document.querySelectorAll('.reveal').forEach((el) => {
+      el.classList.add('visible');
     });
-});
+  }
+
+  // ── Smooth anchor links ────────────────────────────────────────────
+  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    anchor.addEventListener('click', (e) => {
+      const target = document.querySelector(anchor.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        const offset = 80; // nav height + buffer
+        const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // ── Hero scroll hint — fade out on scroll ─────────────────────────
+  const heroScroll = document.querySelector('.hero-scroll');
+  if (heroScroll) {
+    window.addEventListener('scroll', () => {
+      const opacity = Math.max(0, 1 - window.scrollY / 200);
+      heroScroll.style.opacity = opacity;
+    }, { passive: true });
+  }
+
+})();

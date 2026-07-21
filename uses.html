@@ -1,92 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What I Use (/uses) | Piyush Das</title>
-    <meta name="description" content="Tools, software, hardware, and technologies Piyush Das uses for software engineering, AI integration, and development.">
-    <link rel="canonical" href="https://piyushdas1624.github.io/uses.html">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uses — Piyush Das</title>
+  <meta name="description" content="Tools, software, hardware, AI models, and developer environment that Piyush Das uses daily for software engineering and AI development.">
+  <link rel="canonical" href="https://piyushdas1624.github.io/uses.html">
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/92461717?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="noise-overlay"></div>
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-gradient" aria-hidden="true"></div>
 
-    <header class="section hero" style="min-height: 35vh; padding-top: 3rem;">
-        <div class="container">
-            <a href="index.html" class="link-btn" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-arrow-left"></i> Back to Portfolio</a>
-            <h1 class="gradient-text">🛠️ What I Use (/uses)</h1>
-            <p class="subtitle">A detailed breakdown of my hardware, software, AI tools, languages, and developer environment.</p>
+  <nav class="nav scrolled" role="navigation" aria-label="Main navigation" id="main-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Back to portfolio">Piyush<span>.</span></a>
+      <div class="nav-links">
+        <a href="index.html#projects" class="nav-link">Projects</a>
+        <a href="articles.html" class="nav-link">Articles</a>
+        <a href="https://github.com/Piyushdas1624" class="nav-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="resume.html" class="nav-cta">Resume</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="padding-top: calc(var(--nav-height) + var(--space-16));">
+    <div class="container" style="max-width: 760px;">
+      <a href="index.html" class="back-link reveal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        Back to portfolio
+      </a>
+
+      <div class="section-header reveal">
+        <div class="eyebrow">/uses</div>
+        <h1 class="section-title" style="font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl)); letter-spacing: -0.03em;">What I use</h1>
+        <p class="section-desc">A detailed breakdown of the hardware, software, AI tools, and developer environment I use daily.</p>
+      </div>
+
+      <div class="section-sm">
+
+        <!-- Hardware -->
+        <div class="uses-section reveal">
+          <h2 class="uses-section-title">Hardware</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Primary workstation</p>
+                <p class="uses-value">Windows 11 PC</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Mobile test device</p>
+                <p class="uses-value">Android phone (daily testing)</p>
+              </div>
+            </div>
+          </div>
         </div>
-    </header>
 
-    <main class="container section" style="padding-top: 0;">
-        <div class="grid" style="margin-bottom: 2rem;">
-            <!-- Hardware -->
-            <div class="glass-card">
-                <h4>💻 Hardware</h4>
-                <ul class="interest-list">
-                    <li><strong>Primary Workstation:</strong> Windows 11 PC</li>
-                    <li><strong>Mobile Test Devices:</strong> Android phone for local testing</li>
-                </ul>
+        <!-- Editor & IDE -->
+        <div class="uses-section reveal reveal-delay-1">
+          <h2 class="uses-section-title">Editor &amp; IDE</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Primary IDE</p>
+                <p class="uses-value">Cursor IDE</p>
+              </div>
             </div>
-
-            <!-- Software & Editors -->
-            <div class="glass-card">
-                <h4>⚡ Software & Editors</h4>
-                <ul class="interest-list">
-                    <li><strong>IDEs & Editors:</strong> Cursor IDE, Antigravity, VS Code</li>
-                    <li><strong>Version Control:</strong> Git, GitHub Desktop, GitHub CLI (`gh`)</li>
-                </ul>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">AI-native coding assistant</p>
+                <p class="uses-value">Antigravity (Google DeepMind)</p>
+              </div>
             </div>
-
-            <!-- AI Tooling -->
-            <div class="glass-card">
-                <h4>🤖 AI Tooling & Models</h4>
-                <ul class="interest-list">
-                    <li><strong>APIs & Models:</strong> Google Gemini API (Gemini Pro & Gemini Flash)</li>
-                    <li><strong>Exploring:</strong> Model Context Protocol (MCP) & Multi-Agent Workflows</li>
-                    <li><strong>Coding Assistance:</strong> Cursor AI, Gemini CLI, Claude</li>
-                </ul>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Secondary editor</p>
+                <p class="uses-value">VS Code</p>
+              </div>
             </div>
-
-            <!-- Languages -->
-            <div class="glass-card">
-                <h4>💻 Languages</h4>
-                <ul class="interest-list">
-                    <li><strong>Primary:</strong> TypeScript, JavaScript, Python</li>
-                    <li><strong>Systems & Web:</strong> C, Java, HTML5, Vanilla CSS3</li>
-                </ul>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Android development</p>
+                <p class="uses-value">Android Studio</p>
+              </div>
             </div>
-
-            <!-- Frameworks & Storage -->
-            <div class="glass-card">
-                <h4>⚙️ Frameworks & Storage</h4>
-                <ul class="interest-list">
-                    <li><strong>Frontend & Backend:</strong> React, Next.js, Node.js, Express, FastAPI</li>
-                    <li><strong>Databases:</strong> SQLite, IndexedDB, Browser LocalStorage</li>
-                    <li><strong>Performance:</strong> Web Workers, DOM Virtualization, Pandoc</li>
-                </ul>
-            </div>
-
-            <!-- Terminal & Browser -->
-            <div class="glass-card">
-                <h4>🐚 Terminal & Browser</h4>
-                <ul class="interest-list">
-                    <li><strong>Terminal & Shell:</strong> PowerShell & Linux WSL2 Bash</li>
-                    <li><strong>Browsers:</strong> Google Chrome (DevTools), Brave Browser</li>
-                </ul>
-            </div>
+          </div>
         </div>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <p><strong>Built with:</strong> HTML, CSS, JavaScript • Hosted on GitHub Pages • Source on <a href="https://github.com/Piyushdas1624/Piyushdas1624.github.io" target="_blank" rel="noopener" style="color: #a5b4fc;">GitHub</a></p>
+        <!-- AI Tools -->
+        <div class="uses-section reveal reveal-delay-2">
+          <h2 class="uses-section-title">AI &amp; Models</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8z"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Primary AI API</p>
+                <p class="uses-value">Google Gemini (Pro &amp; Flash)</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8z"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">AI coding assistant</p>
+                <p class="uses-value">Cursor AI, Gemini CLI, Claude</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">AI integration protocol</p>
+                <p class="uses-value">Model Context Protocol (MCP)</p>
+              </div>
+            </div>
+          </div>
         </div>
-    </footer>
+
+        <!-- Languages -->
+        <div class="uses-section reveal reveal-delay-3">
+          <h2 class="uses-section-title">Languages</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Primary</p>
+                <p class="uses-value">TypeScript, JavaScript, Python</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Android</p>
+                <p class="uses-value">Kotlin</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Systems &amp; academic</p>
+                <p class="uses-value">C, Java</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal & Browser -->
+        <div class="uses-section reveal">
+          <h2 class="uses-section-title">Terminal &amp; Browser</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Shell</p>
+                <p class="uses-value">PowerShell &amp; Linux WSL2 Bash</p>
+              </div>
+            </div>
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Browser</p>
+                <p class="uses-value">Google Chrome (DevTools), Brave</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Version Control -->
+        <div class="uses-section reveal reveal-delay-1">
+          <h2 class="uses-section-title">Version Control</h2>
+          <div class="uses-list" role="list">
+            <div class="uses-item" role="listitem">
+              <div class="uses-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" x2="6" y1="9" y2="21"/></svg>
+              </div>
+              <div>
+                <p class="uses-label">Source control</p>
+                <p class="uses-value">Git, GitHub Desktop, GitHub CLI (gh)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p>Piyush Das &bull; India</p>
+        <nav class="footer-links" aria-label="Footer links">
+          <a href="index.html" class="footer-link">Portfolio</a>
+          <a href="now.html" class="footer-link">/now</a>
+          <a href="resume.html" class="footer-link">Resume</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
