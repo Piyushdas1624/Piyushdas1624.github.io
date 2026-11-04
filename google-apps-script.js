@@ -17,60 +17,77 @@
  * ----------------------------------------------------------------------------
  * 🔒 SECURITY & PRIVACY: WHY YOUR GOOGLE DOC REMAINS 100% PRIVATE
  * ----------------------------------------------------------------------------
- * 1. KEEP YOUR DOC "RESTRICTED":
- *    In Google Docs, keep "Share" settings set to "Restricted" (Only Piyush has access).
- *    Do NOT make it "Anyone with the link can view". It stays 100% private.
+ * 1. KEEP YOUR DOC "RESTRICTED" (IMPORTANT):
+ *    In Google Docs, click the blue "Share" button. Under "General access",
+ *    ensure it is set to "Restricted" (Only Piyush has access).
+ *    ⚠️ Do NOT set it to "Anyone with the link can view". It must stay private!
  * 
- * 2. EXECUTE AS "ME":
- *    When you deploy this Web App, set "Execute as: Me". This means Google Apps Script
- *    runs with your personal Google credentials on Google's secure cloud servers.
- *    It has internal permission to edit your private Google Doc without needing
- *    the doc to be public.
+ * 2. WHY RESTRICTED ACCESS WORKS WITH WEB APPS:
+ *    When you deploy this Apps Script Web App, you choose:
+ *      "Execute as: Me (your Google account)"
+ *    This means Google's cloud executes the script under YOUR identity. It has
+ *    native owner permissions to write to your private document without
+ *    needing the document to be public or accessible to anyone else.
  * 
- * 3. IMMUNE TO AI CRAWLERS & SEARCH ENGINES:
- *    Because the Google Doc is Restricted, Google Search, GPTBot, ClaudeBot,
- *    and web scrapers CANNOT crawl, view, or index it.
- *    The Web App endpoint only accepts POST writes; it NEVER returns or exposes
- *    the document contents to the caller.
+ * 3. 100% IMMUNE TO AI CRAWLERS & PUBLIC SEARCH ENGINES:
+ *    Because the Google Doc is Restricted:
+ *      - Google Search, Bing, and DuckDuckGo CANNOT index it.
+ *      - AI scrapers (GPTBot, ClaudeBot, Perplexity, Bytespider) CANNOT crawl it.
+ *      - Public users visiting the doc URL get an HTTP 403 / Google Login wall.
+ *    Furthermore, this Web App endpoint is strictly WRITE-ONLY; it never
+ *    returns or exposes the contents of your document to the web.
  * 
  * ----------------------------------------------------------------------------
  * 🚀 60-SECOND DEPLOYMENT INSTRUCTIONS:
  * ----------------------------------------------------------------------------
- * 1. Visit: https://script.google.com/home/start (or type script.new in browser)
+ * 1. Open: https://script.google.com/home/start (or type script.new in browser)
  * 2. Click "+ New project".
- * 3. Give it a title, e.g.: "QuickDrop Google Doc Relay"
- * 4. Select all existing text in the editor (Code.gs) and REPLACE it with
- *    the entire contents of this file.
- * 5. Click the blue "Deploy" button (top-right) -> choose "New deployment".
- * 6. Click the gear icon (⚙️) next to "Select type" and select "Web app".
- * 7. Fill in the deployment configuration:
- *      - Description: "QuickDrop to Google Doc Relay"
- *      - Execute as: "Me (<your-email>@gmail.com)"  <-- IMPORTANT!
- *      - Who has access: "Anyone"                   <-- IMPORTANT! (Allows laptop without login)
- * 8. Click "Deploy".
- * 9. Click "Authorize access", choose your Google account, click "Advanced"
- *    -> "Go to QuickDrop Google Doc Relay (unsafe)" -> click "Allow".
- * 10. Copy the "Web app URL" (it looks like:
- *     https://script.google.com/macros/s/AKfycb.../exec).
+ * 3. Name the project: "QuickDrop-Relay" (top left).
+ * 4. Select all existing text in "Code.gs" and REPLACE it with the contents
+ *    of this entire file.
+ * 5. (Optional quick test): In the function dropdown, select "testDirectAppend"
+ *    and click "Run". Click "Review permissions", pick your Google account,
+ *    click "Advanced" -> "Go to QuickDrop-Relay (unsafe)" -> click "Allow".
+ *    Open your Google Doc — you will see the test note appear immediately!
+ * 6. Click the blue "Deploy" button (top-right) -> choose "New deployment".
+ * 7. Click the gear icon (⚙️) next to "Select type" and choose "Web app".
+ * 8. Set the configuration:
+ *      - Description: "QuickDrop to Google Doc Relay v1"
+ *      - Execute as: "Me (<your-email>@gmail.com)"  <-- REQUIRED!
+ *      - Who has access: "Anyone"                   <-- REQUIRED!
+ * 9. Click "Deploy".
+ * 10. Copy the "Web app URL" (ends in /exec, e.g.:
+ *      https://script.google.com/macros/s/AKfycb.../exec).
  * 11. Open QuickDrop (drop.html), switch to the "Device Setup" tab, paste
- *     your Web App URL into the "Google Apps Script Web App URL" box, and
- *     click "Save Settings".
- * 12. Test by dropping a note! It will instantly chime on your phone via ntfy
- *     AND append permanently to your Google Doc!
+ *      your Web App URL into the "Google Apps Script Web App URL" box, and
+ *      click "Save Google Doc URL" (or click "Test Google Doc Sync").
+ * 12. Every note you send from QuickDrop will now instantly buzz your phone
+ *      via ntfy AND permanently append to your Google Doc!
+ * 
+ * ----------------------------------------------------------------------------
+ * 🧪 TERMINAL VERIFICATION EXAMPLES (OPTIONAL):
+ * ----------------------------------------------------------------------------
+ * # Quick GET status ping:
+ * curl -L "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+ * 
+ * # Direct append via curl:
+ * curl -L -X POST "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" \
+ *   -H "Content-Type: text/plain;charset=utf-8" \
+ *   -d '{"title":"Terminal Note","message":"Sent directly via curl!","category":"code"}'
  * ============================================================================
  */
 
 // Target Document ID for QuickDrop permanent storage
-const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
+var DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
 
 // Preferred display timezone (Indian Standard Time / Asia/Kolkata)
-const DEFAULT_TIMEZONE = 'Asia/Kolkata';
+var DEFAULT_TIMEZONE = 'Asia/Kolkata';
 
 /**
- * HTTP POST Handler — Appends the note to the Google Doc
+ * HTTP POST Handler — Receives drops and appends them to the Google Doc
  */
 function doPost(e) {
-  // Use ScriptLock to prevent concurrent write collisions from multiple simultaneous drops
+  // Use ScriptLock to prevent concurrent write collisions from simultaneous drops
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(30000); // Wait up to 30s
@@ -78,42 +95,69 @@ function doPost(e) {
     return createJsonResponse({
       status: 'error',
       message: 'Server busy: Could not acquire lock within 30 seconds.'
-    }, 503);
+    });
   }
 
   try {
     var payload = {};
 
-    // Parse incoming data: supports JSON payload, text/plain JSON, or URL-encoded form parameters
-    if (e && e.postData && e.postData.contents) {
+    // 1. Flexible Payload Parsing: handles JSON body, form-urlencoded, or raw text
+    if (e && e.parameter && Object.keys(e.parameter).length > 0 && (!e.postData || e.postData.type === 'application/x-www-form-urlencoded')) {
+      payload = e.parameter;
+    } else if (e && e.postData && e.postData.contents) {
       try {
         payload = JSON.parse(e.postData.contents);
       } catch (jsonErr) {
-        // If not pure JSON, treat raw contents as message
-        payload = { message: e.postData.contents };
+        if (e.parameter && Object.keys(e.parameter).length > 0) {
+          payload = e.parameter;
+        } else {
+          payload = { message: e.postData.contents };
+        }
       }
     } else if (e && e.parameter) {
       payload = e.parameter;
     }
 
-    // Ping / healthcheck test action
-    if (payload.action === 'ping' || payload.action === 'test_connection') {
+    var targetDocId = (payload.docId && typeof payload.docId === 'string' && payload.docId.trim())
+      ? payload.docId.trim()
+      : DEFAULT_DOC_ID;
+
+    // 2. Healthcheck ping action (does not write to document)
+    if (payload.action === 'ping') {
       return createJsonResponse({
         status: 'success',
         message: 'QuickDrop Google Apps Script Relay is online and connected!',
-        docId: DEFAULT_DOC_ID,
+        docId: targetDocId,
         timestamp: new Date().toISOString()
       });
     }
 
-    var targetDocId = payload.docId || DEFAULT_DOC_ID;
+    // 3. Test connection action: writes a real verification note to verify write permissions
+    if (payload.action === 'test_connection') {
+      var testResult = appendNoteToGoogleDoc(targetDocId, {
+        title: payload.title || 'QuickDrop Connection Verification',
+        message: payload.message || 'QuickDrop successfully connected to your Google Doc! Notes dropped from any browser will now be permanently preserved here.',
+        sender: payload.sender || 'QuickDrop Verification Test',
+        category: payload.category || 'idea',
+        timezone: payload.timezone
+      });
+      return createJsonResponse({
+        status: 'success',
+        message: 'Test entry successfully appended to Google Doc!',
+        docId: targetDocId,
+        timestamp: testResult.formattedTime,
+        entryIndex: testResult.entryIndex
+      });
+    }
 
+    // 4. Standard Note Payload
     var noteData = {
       title: payload.title || 'QuickDrop Note',
       message: payload.message || '',
-      sender: payload.sender || 'Unknown Device',
+      sender: payload.sender || 'QuickDrop Device',
       category: (payload.category || 'note').toLowerCase(),
       url: payload.url || null,
+      timezone: payload.timezone || null,
       timestamp: payload.timestamp || null
     };
 
@@ -122,7 +166,7 @@ function doPost(e) {
       return createJsonResponse({
         status: 'error',
         message: 'Empty payload: No message or URL provided.'
-      }, 400);
+      });
     }
 
     // Append entry to Google Doc
@@ -140,7 +184,7 @@ function doPost(e) {
     return createJsonResponse({
       status: 'error',
       message: 'Failed to append note: ' + err.toString()
-    }, 500);
+    });
   } finally {
     lock.releaseLock();
   }
@@ -154,14 +198,14 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.test === '1') {
     try {
       var testResult = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
-        title: 'QuickDrop Test Ping',
+        title: 'QuickDrop Browser Test Ping',
         message: 'This is a test entry confirming your Google Apps Script relay is properly connected to your document.',
         sender: 'Browser GET Test',
         category: 'idea'
       });
       return createJsonResponse({
         status: 'success',
-        message: 'Test entry written successfully!',
+        message: 'Test entry written successfully to Google Doc!',
         docId: DEFAULT_DOC_ID,
         timestamp: testResult.formattedTime
       });
@@ -169,7 +213,7 @@ function doGet(e) {
       return createJsonResponse({
         status: 'error',
         message: err.toString()
-      }, 500);
+      });
     }
   }
 
@@ -189,14 +233,27 @@ function appendNoteToGoogleDoc(docId, note) {
   var doc = DocumentApp.openById(docId);
   var body = doc.getBody();
 
-  // Determine timezone
+  // Determine timezone (preferred: DEFAULT_TIMEZONE 'Asia/Kolkata')
   var tz = DEFAULT_TIMEZONE;
-  try {
-    tz = Session.getScriptTimeZone() || DEFAULT_TIMEZONE;
-  } catch (tzErr) {}
+  if (note.timezone && typeof note.timezone === 'string') {
+    tz = note.timezone;
+  }
 
-  var now = new Date();
-  var dateStr = Utilities.formatDate(now, tz, 'yyyy-MM-dd HH:mm:ss');
+  var now = note.timestamp ? new Date(note.timestamp) : new Date();
+  if (isNaN(now.getTime())) now = new Date();
+
+  var dateStr = '';
+  try {
+    dateStr = Utilities.formatDate(now, tz, 'yyyy-MM-dd HH:mm:ss');
+  } catch (fmtErr) {
+    try {
+      dateStr = Utilities.formatDate(now, DEFAULT_TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+      tz = DEFAULT_TIMEZONE;
+    } catch (defErr) {
+      dateStr = Utilities.formatDate(now, 'UTC', 'yyyy-MM-dd HH:mm:ss');
+      tz = 'UTC';
+    }
+  }
   var formattedTime = dateStr + ' (' + tz + ')';
 
   // Category Icon & Badge
@@ -208,15 +265,26 @@ function appendNoteToGoogleDoc(docId, note) {
   else if (catUpper === 'URGENT') icon = '🚨';
   else if (catUpper === 'RESPONSE' || catUpper === 'REPLY') icon = '💬';
 
+  // Clean title: remove duplicate [CATEGORY] or icon if already prefixed by client
+  var cleanTitle = (note.title || 'Untitled Note').trim();
+  if (cleanTitle.indexOf(icon) === 0) {
+    cleanTitle = cleanTitle.substring(icon.length).trim();
+  }
+  var prefix = '[' + catUpper + ']';
+  if (cleanTitle.toUpperCase().indexOf(prefix) === 0) {
+    cleanTitle = cleanTitle.substring(prefix.length).trim();
+  }
+  if (!cleanTitle) cleanTitle = 'QuickDrop Note';
+
   // 1. Horizontal separator line
   body.appendHorizontalRule();
 
   // 2. Header Paragraph (Title)
-  var titleText = icon + ' [' + catUpper + '] ' + (note.title || 'Untitled Note');
+  var titleText = icon + ' [' + catUpper + '] ' + cleanTitle;
   var titlePara = body.appendParagraph(titleText);
   titlePara.setHeading(DocumentApp.ParagraphHeading.HEADING2);
   titlePara.setForegroundColor('#1a73e8'); // Google Blue accent
-  titlePara.setSpacingBefore(8);
+  titlePara.setSpacingBefore(10);
   titlePara.setSpacingAfter(2);
 
   // 3. Metadata Paragraph (Timestamp, Sender, Category)
@@ -246,13 +314,20 @@ function appendNoteToGoogleDoc(docId, note) {
   }
 
   // 5. Dedicated Link section if URL exists
-  if (note.url) {
-    var linkPara = body.appendParagraph('🔗 Direct Link: ' + note.url);
-    linkPara.setFontSize(9.5);
-    linkPara.setLinkUrl(note.url);
-    linkPara.setForegroundColor('#1a73e8');
-    linkPara.setUnderline(true);
-    linkPara.setSpacingAfter(6);
+  if (note.url && typeof note.url === 'string') {
+    var cleanUrl = note.url.trim();
+    if (/^https?:\/\//i.test(cleanUrl)) {
+      var linkPara = body.appendParagraph('🔗 Direct Link: ' + cleanUrl);
+      linkPara.setFontSize(9.5);
+      linkPara.setForegroundColor('#1a73e8');
+      linkPara.setUnderline(true);
+      linkPara.setSpacingAfter(6);
+      try {
+        linkPara.setLinkUrl(cleanUrl);
+      } catch (linkErr) {
+        Logger.log('Warning setting link URL: ' + linkErr);
+      }
+    }
   }
 
   // Save changes to DocumentApp
@@ -267,7 +342,7 @@ function appendNoteToGoogleDoc(docId, note) {
 /**
  * Helper to build JSON responses for Google Apps Script Web App
  */
-function createJsonResponse(data, statusCode) {
+function createJsonResponse(data) {
   var output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
   return output;
@@ -275,7 +350,7 @@ function createJsonResponse(data, statusCode) {
 
 /**
  * Direct Test function — You can run this directly inside the Apps Script editor!
- * Click "Run" on testDirectAppend to verify your document permissions.
+ * Select "testDirectAppend" in the toolbar dropdown and click "Run".
  */
 function testDirectAppend() {
   var result = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {

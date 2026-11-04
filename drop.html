@@ -7,6 +7,7 @@
   <!-- Search Engine & AI Crawler Privacy Controls -->
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <meta name="googlebot" content="noindex, nofollow">
+  <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
 
   <!-- Title & SEO -->
   <title>QuickDrop — Send Instant Note or Link to Piyush</title>
@@ -138,7 +139,7 @@
             <button type="button" class="btn btn-secondary" onclick="copyReceipt()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
               📋 Copy receipt
             </button>
-            <a id="receipt-doc-link" href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); display: none; color: var(--text-accent); border-color: var(--border-accent);">
+            <a id="receipt-doc-link" href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); display: none; color: var(--text-accent); border-color: var(--border-accent);">
               📄 Open Google Doc ↗
             </a>
             <button type="button" class="btn btn-secondary" onclick="switchDropTab('feed')" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
@@ -381,7 +382,7 @@
               <input type="url" id="custom-gas-input" class="form-input" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs);" />
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-tertiary);">
                 <span>Target Doc ID: <code style="color: var(--text-accent);">1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s</code></span>
-                <a href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">
+                <a href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">
                   📄 Open Target Google Doc ↗
                 </a>
               </div>
@@ -419,6 +420,7 @@
                 ▶ Click here for 60-second setup instructions (Deploy in script.google.com)
               </summary>
               <ol style="margin-top: var(--space-2); padding-left: var(--space-4); line-height: 1.7;">
+                <li style="color: var(--color-warning);"><strong>Step 0 (Important Privacy):</strong> Open your Google Doc (<a href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">1EgAUJU...</a>), click the blue <strong>Share</strong> button, and ensure General access is set to <strong>Restricted</strong> (Only people with access can open with the link). Because Apps Script runs as "Me", it writes privately without ever making your doc public.</li>
                 <li>Open <a href="https://script.google.com/home/start" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">script.google.com</a> (or <code>script.new</code>) and click <strong>+ New project</strong>.</li>
                 <li>Name the project <code>QuickDrop-Relay</code>.</li>
                 <li>Replace the code in <code>Code.gs</code> with the code from <a href="google-apps-script.js" target="_blank" style="color: var(--accent); text-decoration: underline;"><code>google-apps-script.js</code></a> (click the "Copy Apps Script Code" button above).</li>
@@ -482,7 +484,7 @@
     // Configuration
     const DEFAULT_TOPIC = 'piyush-drop-1624';
     const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
-    const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing';
+    const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit';
     let currentTopic = localStorage.getItem('qd_topic') || DEFAULT_TOPIC;
     let customWebhook = localStorage.getItem('qd_webhook') || '';
     let customGasUrl = localStorage.getItem('qd_gas_url') || '';
@@ -737,6 +739,14 @@
           return;
         }
       } catch (err) {}
+      try {
+        const res2 = await fetch('https://raw.githubusercontent.com/Piyushdas1624/Piyushdas1624.github.io/main/google-apps-script.js');
+        if (res2.ok) {
+          const code2 = await res2.text();
+          await safeCopy(code2, 'Google Apps Script code copied to clipboard!');
+          return;
+        }
+      } catch (err2) {}
       safeCopy('https://github.com/Piyushdas1624/Piyushdas1624.github.io/blob/main/google-apps-script.js', 'Link to google-apps-script.js copied!');
     }
 
@@ -759,18 +769,40 @@
           sender: detectDeviceName() + ' (Verification Test)',
           category: 'idea',
           docId: DEFAULT_DOC_ID,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
           timestamp: new Date().toISOString()
         };
 
-        await fetch(testUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(testPayload)
-        });
+        let verified = false;
+        try {
+          const res = await fetch(testUrl, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(testPayload)
+          });
+          if (res.ok) {
+            const data = await res.json();
+            verified = true;
+            playDeliveryChime();
+            showToast('✓ Verified! Test entry saved to Google Doc.');
+            return;
+          }
+        } catch (corsErr) {
+          // If browser blocked cross-origin redirect read, fallback to mode: 'no-cors'
+        }
 
-        playDeliveryChime();
-        showToast('Test signal dispatched to Google Doc!');
+        if (!verified) {
+          await fetch(testUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(testPayload)
+          });
+          playDeliveryChime();
+          showToast('Test signal dispatched to Google Doc!');
+        }
       } catch (err) {
         console.error('Test error:', err);
         showToast('Test failed: ' + err.message);
@@ -897,6 +929,38 @@
         let ntfyRes;
         let routeDescription = 'Instant Push via ntfy.sh';
 
+        // ── Permanent Archive to Google Docs via Google Apps Script (Concurrent Dispatch) ────
+        let gdocsAppended = false;
+        let gasPromise = null;
+        if (customGasUrl) {
+          try {
+            const gasPayload = {
+              title: title,
+              message: message,
+              sender: sender,
+              category: selectedCategory,
+              url: firstUrl,
+              docId: DEFAULT_DOC_ID,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
+              timestamp: new Date().toISOString()
+            };
+            // Note: mode 'no-cors' with 'text/plain' and 'redirect: follow' ensures POST delivers reliably through Google 302 redirects
+            gasPromise = fetch(customGasUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              redirect: 'follow',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(gasPayload)
+            }).then(() => {
+              gdocsAppended = true;
+            }).catch(gasErr => {
+              console.warn('Google Doc append warning:', gasErr);
+            });
+          } catch (gasSetupErr) {
+            console.warn('Google Doc setup error:', gasSetupErr);
+          }
+        }
+
         // Check message length:
         // Standard ntfy message limit is ~4096 bytes.
         // For messages > 3500 characters, upload as a text attachment via PUT.
@@ -951,30 +1015,9 @@
           });
         }
 
-        // ── Permanent Archive to Google Docs via Google Apps Script ────
-        let gdocsAppended = false;
-        if (customGasUrl) {
-          try {
-            const gasPayload = {
-              title: title,
-              message: message,
-              sender: sender,
-              category: selectedCategory,
-              url: firstUrl,
-              docId: DEFAULT_DOC_ID,
-              timestamp: new Date().toISOString()
-            };
-            // Note: mode 'no-cors' with 'text/plain' ensures POST delivers reliably through Google 302 redirects
-            await fetch(customGasUrl, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(gasPayload)
-            });
-            gdocsAppended = true;
-          } catch (gasErr) {
-            console.warn('Google Doc append warning:', gasErr);
-          }
+        // Wait up to 2.2 seconds for Google Doc append if running, or let it complete in background
+        if (gasPromise) {
+          await Promise.race([gasPromise, new Promise(r => setTimeout(r, 2200))]);
         }
 
         // Optional Channel: Discord Webhook if configured
@@ -1100,6 +1143,7 @@
             fetch(customGasUrl, {
               method: 'POST',
               mode: 'no-cors',
+              redirect: 'follow',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify({
                 title: `💬 Response from ${sender}`,
@@ -1107,6 +1151,7 @@
                 sender: sender,
                 category: 'reply',
                 docId: DEFAULT_DOC_ID,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
                 timestamp: new Date().toISOString()
               })
             }).catch(e => console.warn('Google Doc reply warning:', e));
@@ -1172,6 +1217,7 @@
               fetch(customGasUrl, {
                 method: 'POST',
                 mode: 'no-cors',
+                redirect: 'follow',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
                   title: `↩️ Re: ${item.title || 'Note'}`,
@@ -1179,6 +1225,7 @@
                   sender: detectDeviceName(),
                   category: 'reply',
                   docId: DEFAULT_DOC_ID,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
                   timestamp: new Date().toISOString()
                 })
               }).catch(e => console.warn('Google Doc reply warning:', e));
