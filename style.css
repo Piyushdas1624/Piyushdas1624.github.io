@@ -2506,12 +2506,28 @@ h1, h2, h3, h4, h5 {
   color: var(--color-success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
-
 .badge-visitor-mode {
   background: rgba(251, 191, 36, 0.12);
   color: var(--color-warning);
   border: 1px solid rgba(251, 191, 36, 0.3);
 }
+
+/* Setup Lock Screen (Strict Owner Privacy) */
+.setup-lock-card {
+  border-color: rgba(99, 102, 241, 0.28);
+  background: linear-gradient(180deg, rgba(22, 23, 38, 0.95) 0%, rgba(13, 14, 24, 0.98) 100%);
+}
+
+.setup-lock-card .feed-lock-icon {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+}
+
+.drop-tab.locked {
+  color: var(--color-warning);
+}
+
 
 
 
