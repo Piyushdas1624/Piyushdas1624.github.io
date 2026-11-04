@@ -285,7 +285,9 @@ function doPost(e) {
     }
 
     // 5. Anti-Spam Shield 1: Honeypot check
-    var honeypot = (payload.hp_field !== undefined && payload.hp_field !== null) ? String(payload.hp_field).trim() : '';
+    var honeypot = (payload.hp_field !== undefined && payload.hp_field !== null) 
+      ? String(payload.hp_field).trim() 
+      : (e && e.parameter && e.parameter.hp_field ? String(e.parameter.hp_field).trim() : '');
     if (honeypot !== '') {
       // Automated bot detected: return success but silently discard without writing
       return createJsonResponse({
@@ -321,28 +323,7 @@ function doPost(e) {
     var auth = isAuthorized(payload, e);
     var isOwner = auth.authorized;
 
-    // 8. Visitor Compartment Anti-Spam Shields (Rate Limiting & Length Cap)
-    if (!isOwner) {
-      // Visitor signature identifier for rate limiting
-      var rawSig = (payload.visitorId || payload.sender || 'visitor').toString().trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 40);
-      var visitorSig = rawSig || 'guest';
-
-      var rlCheck = checkVisitorRateLimit(visitorSig);
-      if (!rlCheck.allowed) {
-        return createJsonResponse({
-          status: 'error',
-          code: 429,
-          message: rlCheck.reason
-        });
-      }
-
-      // Truncate visitor messages to max 1,500 characters to prevent spam bombs
-      if (noteData.message && noteData.message.length > 1500) {
-        noteData.message = noteData.message.substring(0, 1500) + '\n\n[Message truncated at 1,500 characters by QuickDrop anti-abuse shield]';
-      }
-    }
-
-    // 9. Server-Side Idempotency & Deduplication
+    // 8. Server-Side Idempotency & Deduplication (Checked BEFORE rate-limit to avoid double-counting)
     var dropId = (payload.dropId || payload.id || '').toString().trim();
     if (!dropId && noteData.message) {
       try {
@@ -373,6 +354,36 @@ function doPost(e) {
         }
       } catch (cacheErr) {
         Logger.log('Cache notice: ' + cacheErr);
+      }
+    }
+
+    // 9. Visitor Compartment Anti-Spam Shields (Rate Limiting & Length Cap)
+    if (!isOwner) {
+      // Visitor signature identifier for rate limiting
+      var rawSig = (payload.visitorId || (e && e.parameter && e.parameter.visitorId) || payload.sender || (e && e.parameter && e.parameter.sender) || 'visitor').toString().trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 40);
+      var visitorSig = rawSig || 'guest';
+
+      var rlCheck = checkVisitorRateLimit(visitorSig);
+      if (!rlCheck.allowed) {
+        return createJsonResponse({
+          status: 'error',
+          code: 429,
+          message: rlCheck.reason
+        });
+      }
+
+      // Truncate visitor messages to max 1,500 characters to prevent spam bombs
+      if (noteData.message && noteData.message.length > 1500) {
+        noteData.message = noteData.message.substring(0, 1500) + '\n\n[Message truncated at 1,500 characters by QuickDrop anti-abuse shield]';
+      }
+      if (noteData.title && noteData.title.length > 200) {
+        noteData.title = noteData.title.substring(0, 200);
+      }
+      if (noteData.sender && noteData.sender.length > 100) {
+        noteData.sender = noteData.sender.substring(0, 100);
+      }
+      if (noteData.url && noteData.url.length > 1000) {
+        noteData.url = noteData.url.substring(0, 1000);
       }
     }
 
@@ -414,7 +425,13 @@ function doPost(e) {
       message: 'Failed to process note: ' + err.toString()
     });
   } finally {
-    lock.releaseLock();
+    try {
+      if (lock && lock.hasLock()) {
+        lock.releaseLock();
+      }
+    } catch (lockReleaseErr) {
+      Logger.log('Lock release notice: ' + lockReleaseErr);
+    }
   }
 }
 

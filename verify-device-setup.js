@@ -400,6 +400,41 @@ async function main() {
     );
   });
 
+  console.log('\n--- GROUP 10: Option 3A Robustness & Abuse Prevention ---');
+  runTest('drop.html and send.html eliminate all stale email reply notifications', () => {
+    assert(!dropHtml.includes('Reply emailed directly to Piyush'), 'drop.html must not say reply emailed');
+    assert(!sendHtml.includes('Reply emailed directly to Piyush'), 'send.html must not say reply emailed');
+  });
+
+  runTest('drop.html halts submission on rate limit or error without wiping form', () => {
+    assert(
+      dropHtml.includes("showToast('⚠️ ' + (data.message || 'Rate limit reached: Maximum 5 messages per 10 minutes. Please wait before submitting again.'), 6000);"),
+      'Must display informative rate limit message'
+    );
+    const rateLimitIndex = dropHtml.indexOf("data.code === 429");
+    const returnIndex = dropHtml.indexOf("return;", rateLimitIndex);
+    assert(returnIndex !== -1 && returnIndex - rateLimitIndex < 300, 'Must return early on 429 without continuing execution');
+  });
+
+  runTest('google-apps-script.js checks idempotency BEFORE incrementing visitor rate limit', () => {
+    const dedupPos = gasScript.indexOf('Server-Side Idempotency & Deduplication');
+    const rateLimitPos = gasScript.indexOf('var rlCheck = checkVisitorRateLimit(');
+    assert(dedupPos !== -1, 'Must contain idempotency check');
+    assert(rateLimitPos !== -1, 'Must contain rate limit check invocation');
+    assert(dedupPos < rateLimitPos, 'Idempotency check must execute before checkVisitorRateLimit invocation');
+  });
+
+  runTest('google-apps-script.js caps visitor title, sender, url, and message lengths', () => {
+    assert(gasScript.includes('noteData.message.length > 1500'), 'Must cap message to 1500 chars');
+    assert(gasScript.includes('noteData.title.length > 200'), 'Must cap title to 200 chars');
+    assert(gasScript.includes('noteData.sender.length > 100'), 'Must cap sender to 100 chars');
+    assert(gasScript.includes('noteData.url.length > 1000'), 'Must cap url to 1000 chars');
+  });
+
+  runTest('google-apps-script.js guards Lock release with hasLock() check', () => {
+    assert(gasScript.includes('lock.hasLock()'), 'Must check lock.hasLock() before releaseLock()');
+  });
+
   console.log('\n================================================================');
   console.log(`TEST SUMMARY: ${passedTests} PASSED, ${failedTests} FAILED`);
   console.log('================================================================');

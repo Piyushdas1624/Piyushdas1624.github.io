@@ -1728,7 +1728,14 @@
                   routeDescription = "📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)";
                 }
               } else if (data && data.code === 429) {
-                showToast('⚠️ ' + (data.message || 'Rate limit reached'), 5000);
+                showToast('⚠️ ' + (data.message || 'Rate limit reached: Maximum 5 messages per 10 minutes. Please wait before submitting again.'), 6000);
+                return;
+              } else if (data && data.status === 'unauthorized') {
+                showToast('❌ Access Denied: ' + (data.message || 'Owner PIN authorization required.'), 6000);
+                return;
+              } else if (data && data.status === 'error') {
+                showToast('❌ Error: ' + (data.message || 'Failed to process note.'), 5000);
+                return;
               }
             }
           } catch (corsErr) {
@@ -1972,7 +1979,7 @@
         input.value = '';
         playDeliveryChime();
         if (customGasUrl) {
-          showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+          showToast(isOwnerMode ? '👑 Permanently saved to your Private Google Doc' : "📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)");
         } else if (currentTopic) {
           showToast('Reply dispatched via ntfy!');
         } else {
@@ -2054,7 +2061,7 @@
 
           playDeliveryChime();
           if (customGasUrl) {
-            showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+            showToast(isOwnerMode ? '👑 Permanently saved to your Private Google Doc' : "📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)");
           } else if (currentTopic) {
             showToast('Reply dispatched via ntfy!');
           } else {
