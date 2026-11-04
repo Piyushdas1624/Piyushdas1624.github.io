@@ -585,11 +585,12 @@
     const DEFAULT_TOPIC = 'piyush-drop-1624';
     const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
     const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit';
+    const DEFAULT_GAS_URL = ''; // Deployed Google Apps Script Web App /exec URL (set once deployed to enable native Gmail chimes for all public visitors)
     
     // State variables
     let currentTopic = localStorage.getItem('qd_topic') || DEFAULT_TOPIC;
     let customWebhook = localStorage.getItem('qd_webhook') || '';
-    let customGasUrl = localStorage.getItem('qd_gas_url') || '';
+    let customGasUrl = localStorage.getItem('qd_gas_url') || DEFAULT_GAS_URL || '';
     let currentAuthKey = localStorage.getItem('qd_auth_key') || '';
     let feedPrivacy = localStorage.getItem('qd_feed_privacy') || 'private'; // 'private' (default) or 'public'
     let isOwnerMode = Boolean(currentAuthKey && currentAuthKey.trim());
@@ -915,9 +916,11 @@
             const data = await res.json();
             if (data && data.authorized) {
               return { valid: true, pin: pin };
-            } else if (data && data.authorized === false) {
-              return { valid: false, reason: data.message || 'Invalid Owner Secret PIN.' };
+            } else {
+              return { valid: false, reason: (data && data.message) ? data.message : 'Invalid Owner Secret PIN.' };
             }
+          } else {
+            return { valid: false, reason: `Verification endpoint returned HTTP ${res.status}. Check your Web App URL.` };
           }
         } catch (e) {
           // If offline / network error, allow local match if previously verified on this same device
@@ -1090,6 +1093,14 @@
 
       showToast('Verifying connection & Owner PIN with Google Doc...');
       try {
+        // Step 1: Pre-flight verify Owner PIN against Script Properties
+        const authCheck = await validateOwnerPin(testKey);
+        if (!authCheck.valid) {
+          showToast('❌ Auth Failed: ' + authCheck.reason, 6000);
+          if (authInput) authInput.focus();
+          return;
+        }
+
         const testPayload = {
           action: 'test_connection',
           authKey: testKey,
@@ -1138,7 +1149,7 @@
             body: JSON.stringify(testPayload)
           });
           playDeliveryChime();
-          showToast('Test signal dispatched to Google Doc with Owner PIN!');
+          showToast('✓ Verified! Test entry written to your Google Doc with verified Owner PIN.');
         }
       } catch (err) {
         console.error('Test error:', err);
@@ -1213,10 +1224,7 @@
         if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-success); font-weight:600;">Active 👑</span>';
         if (docSyncPill) docSyncPill.title = 'Every note will be permanently appended to your Google Doc.';
         if (setupStatusBadge) {
-          setupStatusBadge.className = 'badge';
-          setupStatusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-          setupStatusBadge.style.color = 'var(--color-success)';
-          setupStatusBadge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          setupStatusBadge.className = 'badge badge-cloud-doc';
           setupStatusBadge.innerHTML = '✓ Connected &amp; Authorized (1EgAUJU...)';
         }
       } else if (customGasUrl && !isOwnerMode) {
@@ -1224,10 +1232,7 @@
         if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--text-accent);">Protected 🛡️ (Gmail Chime Active)</span>';
         if (docSyncPill) docSyncPill.title = 'Public visitor mode: Google Doc is barred; messages email directly to Piyush\'s phone via Gmail.';
         if (setupStatusBadge) {
-          setupStatusBadge.className = 'badge';
-          setupStatusBadge.style.background = 'rgba(99, 102, 241, 0.15)';
-          setupStatusBadge.style.color = 'var(--text-accent)';
-          setupStatusBadge.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+          setupStatusBadge.className = 'badge badge-email';
           setupStatusBadge.innerHTML = '✓ Cloud Relay Connected (Visitor Mode / Enter Owner PIN)';
         }
       } else {
@@ -1235,10 +1240,7 @@
         if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <a href="#setup" onclick="switchDropTab(\'setup\')" style="color:var(--color-warning); text-decoration:underline;">Configure</a>';
         if (docSyncPill) docSyncPill.title = 'Connect your Google Apps Script Web App URL in Device Setup.';
         if (setupStatusBadge) {
-          setupStatusBadge.className = 'badge';
-          setupStatusBadge.style.background = 'rgba(251, 191, 36, 0.15)';
-          setupStatusBadge.style.color = 'var(--color-warning)';
-          setupStatusBadge.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+          setupStatusBadge.className = 'badge badge-visitor-mode';
           setupStatusBadge.innerHTML = '⚠️ Not Configured (Enter Web App URL Below)';
         }
       }
@@ -1271,17 +1273,25 @@
       const btnText = document.getElementById('btn-text');
       const formSecuritySubtext = document.getElementById('form-security-subtext');
       if (btnText) {
-        if (isOwnerMode) {
+        if (isOwnerMode && customGasUrl) {
           btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send &amp; Sync to Doc 👑`;
-        } else {
+        } else if (isOwnerMode) {
+          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send Note (Doc Relay Offline) ⚠️`;
+        } else if (customGasUrl) {
           btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush's Phone (Instant Chime 🔔)`;
+        } else {
+          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush's Devices`;
         }
       }
       if (formSecuritySubtext) {
-        if (isOwnerMode) {
+        if (isOwnerMode && customGasUrl) {
           formSecuritySubtext.innerHTML = '🔒 Owner Mode Active &bull; Instant Push + Permanent Google Doc Sync';
-        } else {
+        } else if (isOwnerMode) {
+          formSecuritySubtext.innerHTML = '⚠️ Owner Mode Active &bull; Google Apps Script URL not configured in Device Setup';
+        } else if (customGasUrl) {
           formSecuritySubtext.innerHTML = '🔒 Public Visitor Mode &bull; Native Phone Chime via Gmail &bull; Private Doc Protected';
+        } else {
+          formSecuritySubtext.innerHTML = '🔒 Public Visitor Mode &bull; Push Notification Alert &bull; Private Doc Protected';
         }
       }
 
@@ -1407,13 +1417,16 @@
 
       try {
         let gasSuccess = false;
-        let routeDescription = isOwnerMode
-          ? 'Permanent Google Doc Archive (1EgAUJU...) [Owner Verified 👑]'
-          : 'Direct to Piyush\'s Phone via Gmail Chime 🔔 (Zero Extra Apps)';
+        let routeDescription = '';
+
+        // Generate receipt ID upfront for idempotency dropId tracking
+        const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
+        const timeStr = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
 
         // ── 1. Primary Dispatch: Google Apps Script Cloud Relay (Zero Extra Apps) ──
         if (customGasUrl) {
           const gasPayload = {
+            dropId: receiptId,
             authKey: isOwnerMode ? currentAuthKey : '',
             title: baseTitle,
             message: message,
@@ -1454,9 +1467,20 @@
                 body: JSON.stringify(gasPayload)
               });
               gasSuccess = true;
+              routeDescription = isOwnerMode
+                ? 'Permanent Google Doc Archive (1EgAUJU...) [Owner Verified 👑]'
+                : 'Direct to Piyush\'s Phone via Gmail Chime 🔔 (Zero Extra Apps)';
             } catch (noCorsErr) {
               console.warn('Google Cloud Relay notice:', noCorsErr);
             }
+          }
+        }
+
+        if (!routeDescription) {
+          if (currentTopic) {
+            routeDescription = 'Instant Push via ntfy.sh (Cloud Gmail Relay not configured)';
+          } else {
+            routeDescription = 'Delivered Locally (No active cloud relay)';
           }
         }
 
@@ -1529,10 +1553,6 @@
 
         playDeliveryChime();
 
-        // Generate receipt
-        const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
-        const timeStr = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
-
         lastDeliveredData = {
           id: receiptId,
           topic: currentTopic,
@@ -1541,7 +1561,7 @@
           sender: sender,
           time: timeStr,
           category: selectedCategory,
-          gdocs: isOwnerMode && Boolean(customGasUrl),
+          gdocs: isOwnerMode && Boolean(gasSuccess),
           isOwner: isOwnerMode
         };
 
@@ -1564,10 +1584,13 @@
         const receiptDocStatus = document.getElementById('receipt-doc-status');
         const receiptDocLink = document.getElementById('receipt-doc-link');
         if (receiptDocStatus) {
-          if (isOwnerMode && customGasUrl) {
+          if (isOwnerMode && gasSuccess) {
             receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc (Authorized 👑)</strong>';
             if (receiptDocLink) receiptDocLink.style.display = 'inline-flex';
-          } else if (!isOwnerMode) {
+          } else if (isOwnerMode) {
+            receiptDocStatus.innerHTML = '<span style="color: var(--color-warning);">⚠️ Cloud Relay not reached (<a href="#setup" onclick="switchDropTab(\'setup\')" style="color: var(--text-accent); text-decoration: underline;">Check Web App URL</a>)</span>';
+            if (receiptDocLink) receiptDocLink.style.display = 'none';
+          } else if (!isOwnerMode && gasSuccess) {
             receiptDocStatus.innerHTML = '<span style="color: var(--text-tertiary);">🔒 Barred (Public Visitor Mode — Emailed directly to Piyush\'s Gmail)</span>';
             if (receiptDocLink) receiptDocLink.style.display = 'none';
           } else {
@@ -1590,10 +1613,16 @@
         titleInput.value = '';
         updateCounters();
 
-        if (isOwnerMode) {
-          showToast('👑 Delivered to phone & permanently saved to Google Doc!');
+        if (gasSuccess) {
+          if (isOwnerMode) {
+            showToast('👑 Delivered to phone & permanently saved to Google Doc!');
+          } else {
+            showToast('🔔 Delivered to Piyush\'s phone via instant Gmail chime!');
+          }
+        } else if (currentTopic) {
+          showToast(isOwnerMode ? 'Delivered via ntfy (Google Doc Relay not connected)' : 'Delivered to Piyush via ntfy push notification!');
         } else {
-          showToast('🔔 Delivered to Piyush\'s phone via instant Gmail chime!');
+          showToast('Message processed locally.');
         }
 
       } catch (err) {
@@ -1625,6 +1654,7 @@
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
+              dropId: 'reply_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
               authKey: isOwnerMode ? currentAuthKey : '',
               title: title,
               message: text,
@@ -1654,7 +1684,13 @@
 
         input.value = '';
         playDeliveryChime();
-        showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+        if (customGasUrl) {
+          showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+        } else if (currentTopic) {
+          showToast('Reply dispatched via ntfy!');
+        } else {
+          showToast('Reply processed.');
+        }
         setTimeout(fetchRecentDrops, 400);
 
       } catch (e) {
@@ -1702,6 +1738,7 @@
               redirect: 'follow',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify({
+                dropId: 'reply_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
                 authKey: isOwnerMode ? currentAuthKey : '',
                 title: title,
                 message: replyText,
@@ -1729,7 +1766,13 @@
           }
 
           playDeliveryChime();
-          showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+          if (customGasUrl) {
+            showToast(isOwnerMode ? 'Reply saved to Google Doc!' : 'Reply emailed directly to Piyush!');
+          } else if (currentTopic) {
+            showToast('Reply dispatched via ntfy!');
+          } else {
+            showToast('Reply processed.');
+          }
           box.remove();
           setTimeout(fetchRecentDrops, 400);
 

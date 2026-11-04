@@ -211,7 +211,7 @@ function doPost(e) {
     // 2. Healthcheck ping & cloud auth check action (non-writing status check)
     if (payload.action === 'ping' || payload.action === 'check_auth') {
       var authCheck = isAuthorized(payload, e);
-      return createJsonResponse({
+      var authResponse = {
         status: authCheck.authorized ? 'success' : 'unauthorized',
         code: authCheck.authorized ? 200 : 401,
         message: authCheck.authorized 
@@ -220,9 +220,13 @@ function doPost(e) {
         authRequired: true,
         configured: Boolean(getEffectiveSecretKey()),
         authorized: authCheck.authorized,
-        docId: targetDocId,
         timestamp: new Date().toISOString()
-      });
+      };
+      // Only reveal docId to verified owners (Zero-Knowledge & Anti-Leak)
+      if (authCheck.authorized) {
+        authResponse.docId = targetDocId;
+      }
+      return createJsonResponse(authResponse);
     }
 
     // 3. Test connection action: writes a real verification note to Google Doc (requires Owner PIN)
@@ -299,6 +303,40 @@ function doPost(e) {
     // Check if sender provided valid Owner Secret PIN
     var auth = isAuthorized(payload, e);
 
+    // Server-Side Idempotency & Deduplication (prevents duplicate emails & doc appends on client retries)
+    var dropId = (payload.dropId || payload.id || '').toString().trim();
+    if (!dropId && noteData.message) {
+      try {
+        var rawSig = (auth.authorized ? 'owner_' : 'visitor_') + (noteData.sender || '') + '|' + (noteData.title || '') + '|' + (noteData.message || '') + '|' + (noteData.url || '');
+        dropId = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, rawSig));
+      } catch (sigErr) {
+        dropId = '';
+      }
+    }
+
+    if (dropId) {
+      try {
+        var cache = CacheService.getScriptCache();
+        if (cache && cache.get('drop_' + dropId)) {
+          return createJsonResponse({
+            status: 'success',
+            mode: auth.authorized ? 'owner' : 'visitor',
+            duplicate: true,
+            message: auth.authorized 
+              ? 'Note already permanently appended to Google Doc (idempotent)' 
+              : 'Visitor note already delivered to Piyush\'s Gmail (idempotent)',
+            docId: auth.authorized ? targetDocId : undefined,
+            timestamp: new Date().toISOString()
+          });
+        }
+        if (cache) {
+          cache.put('drop_' + dropId, '1', 120); // 120-second deduplication window
+        }
+      } catch (cacheErr) {
+        Logger.log('Cache notice: ' + cacheErr);
+      }
+    }
+
     if (auth.authorized) {
       // ══════════════════════════════════════════════════════════════════════
       // 👑 OWNER PATH: Permanently append to private Google Doc
@@ -349,7 +387,7 @@ function doGet(e) {
   // Support remote PIN verification & health ping: ?action=check_auth&key=YOUR_PIN or ?action=ping&key=...
   if (e && e.parameter && (e.parameter.action === 'check_auth' || e.parameter.action === 'ping' || e.parameter.check === '1')) {
     var check = isAuthorized(null, e);
-    return createJsonResponse({
+    var getAuthResp = {
       status: check.authorized ? 'success' : 'unauthorized',
       code: check.authorized ? 200 : 401,
       authorized: check.authorized,
@@ -358,9 +396,13 @@ function doGet(e) {
         ? 'Owner PIN verified successfully via Google Cloud Script Properties 👑' 
         : 'Access Denied: ' + check.reason,
       authRequired: true,
-      targetDocId: DEFAULT_DOC_ID,
       timestamp: new Date().toISOString()
-    });
+    };
+    // Only reveal doc ID to authorized owner requests
+    if (check.authorized) {
+      getAuthResp.targetDocId = DEFAULT_DOC_ID;
+    }
+    return createJsonResponse(getAuthResp);
   }
 
   // Support authenticated Live Feed retrieval via GET: ?action=get_recent&key=YOUR_PIN
@@ -433,7 +475,7 @@ function doGet(e) {
     status: 'online',
     service: 'QuickDrop Cloud Relay (Zero Extra Apps)',
     authProtection: activeSecret ? 'ENABLED (Zero-Knowledge Cloud Script Properties)' : 'UNCONFIGURED (Set AUTH_KEY in Project Settings)',
-    targetDocId: DEFAULT_DOC_ID,
+    docProtection: 'RESTRICTED (Owner PIN required)',
     routing: {
       public_visitors: 'Emails message straight to Piyush\'s Gmail inbox (native smartphone chime 🔔, Google Doc 100% protected)',
       owner: 'Appends note permanently into private Google Doc (requires secret PIN)'
@@ -497,12 +539,27 @@ function sendVisitorEmailNotification(note) {
     '</div>' +
   '</div>';
 
-  MailApp.sendEmail({
+  var emailOptions = {
     to: recipient,
+    name: 'QuickDrop Visitor Relay',
     subject: subject,
     body: plainBody,
     htmlBody: htmlBody
-  });
+  };
+
+  try {
+    MailApp.sendEmail(emailOptions);
+  } catch (mailErr) {
+    try {
+      GmailApp.sendEmail(recipient, subject, plainBody, {
+        name: 'QuickDrop Visitor Relay',
+        htmlBody: htmlBody
+      });
+    } catch (gmailErr) {
+      Logger.log('Visitor email dispatch failed: ' + gmailErr);
+      throw gmailErr;
+    }
+  }
 
   return {
     recipient: recipient,
@@ -659,11 +716,16 @@ function getRecentNotesFromDoc(docId, limit) {
             url: null
           });
         }
-      } else if (text.indexOf('📅 ') === 0 && text.indexOf('•   👤') !== -1) {
+      } else if (text.indexOf('📅') === 0 && (text.indexOf('👤') !== -1 || text.indexOf('•') !== -1)) {
         if (!currentEntry) currentEntry = { title: '', message: '', sender: '', time: '', url: null };
-        var parts = text.split('•   👤');
-        currentEntry.time = parts[0].replace('📅', '').trim();
-        currentEntry.sender = parts[1] ? parts[1].trim() : 'QuickDrop Device';
+        var parts = text.split(/[•·-]\s*👤/);
+        if (parts.length > 1) {
+          currentEntry.time = parts[0].replace(/📅\s*/, '').trim();
+          currentEntry.sender = parts[1] ? parts[1].trim() : 'QuickDrop Device';
+        } else {
+          currentEntry.time = text.replace(/📅\s*/, '').trim();
+          currentEntry.sender = 'QuickDrop Device';
+        }
       } else if (text.indexOf('🔗 Direct Link: ') === 0) {
         if (!currentEntry) currentEntry = { title: '', message: '', sender: '', time: '', url: null };
         currentEntry.url = text.replace('🔗 Direct Link: ', '').trim();
