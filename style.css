@@ -2526,6 +2526,11 @@ h1, h2, h3, h4, h5 {
 
 .drop-tab.locked {
   color: var(--color-warning);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.drop-tab.locked:hover {
+  color: #fbbf24;
 }
 
 

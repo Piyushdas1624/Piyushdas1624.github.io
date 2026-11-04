@@ -651,6 +651,14 @@
       document.getElementById('view-feed').style.display = tabName === 'feed' ? 'block' : 'none';
       document.getElementById('view-setup').style.display = tabName === 'setup' ? 'block' : 'none';
 
+      // Keep browser address bar in sync with active tab
+      if (history.replaceState) {
+        const cleanUrl = tabName === 'compose'
+          ? (window.location.pathname + window.location.search)
+          : (window.location.pathname + window.location.search + '#' + tabName);
+        history.replaceState(null, '', cleanUrl);
+      }
+
       updateAuthStateUI();
 
       if (tabName === 'setup') {
@@ -743,6 +751,26 @@
       }
     }
 
+    // Validate Google Apps Script Web App URL structure
+    function isValidGasUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      const trimmed = url.trim();
+      try {
+        const parsed = new URL(trimmed);
+        if (parsed.protocol !== 'https:') return false;
+        const host = parsed.hostname.toLowerCase();
+        if (host !== 'script.google.com' && !host.endsWith('.script.google.com')) {
+          return false;
+        }
+        if (!parsed.pathname.includes('/macros/')) {
+          return false;
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     // Validate Owner PIN strictly in Google Apps Script (Script Properties in Google Cloud)
     // ZERO hardcoded secrets in GitHub!
     async function validateOwnerPin(candidatePin, candidateGasUrl = '') {
@@ -751,48 +779,43 @@
       }
       const pin = candidatePin.trim();
 
-      // Check if candidate matches previously stored authorized PIN in localStorage
-      const savedAuthKey = localStorage.getItem('qd_auth_key');
-      const gasUrl = candidateGasUrl || customGasUrl || (document.getElementById('custom-gas-input') ? document.getElementById('custom-gas-input').value.trim() : '') || (document.getElementById('setup-gas-input') ? document.getElementById('setup-gas-input').value.trim() : '');
+      const gasInput = document.getElementById('custom-gas-input');
+      const setupGasInput = document.getElementById('setup-gas-input');
+      const gasUrl = (candidateGasUrl || customGasUrl || (gasInput ? gasInput.value.trim() : '') || (setupGasInput ? setupGasInput.value.trim() : '') || DEFAULT_GAS_URL).trim();
 
-      // If Google Apps Script Web App URL is configured, verify strictly in the cloud
-      if (gasUrl) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 7000);
-          const verifyUrl = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}action=check_auth&key=${encodeURIComponent(pin)}`;
-          const res = await fetch(verifyUrl, {
-            method: 'GET',
-            redirect: 'follow',
-            signal: controller.signal
-          });
-          clearTimeout(timer);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.authorized) {
-              return { valid: true, pin: pin, gasUrl: gasUrl, targetDocId: data.targetDocId };
-            } else {
-              return { valid: false, reason: (data && data.message) ? data.message : 'Invalid Owner Secret PIN.' };
-            }
-          } else {
-            return { valid: false, reason: `Verification endpoint returned HTTP ${res.status}. Check your Web App URL.` };
-          }
-        } catch (e) {
-          // If offline / network error, allow local match if previously verified on this same device
-          if (savedAuthKey && pin === savedAuthKey.trim()) {
-            return { valid: true, pin: pin, gasUrl: gasUrl };
-          }
-          return { valid: false, reason: 'Could not connect to Google Cloud verification endpoint. Check your Web App URL.' };
-        }
-      } else {
-        // If gasUrl is not configured yet:
-        if (savedAuthKey && pin === savedAuthKey.trim()) {
-          return { valid: true, pin: pin };
-        }
-        return { valid: false, reason: 'Google Apps Script Web App URL is not set yet. Enter your Web App URL to verify.' };
+      if (!gasUrl) {
+        return { valid: false, reason: 'Google Apps Script Web App URL is required to verify PIN with Google Cloud. Enter your Web App URL below or use your private bookmark link.' };
       }
 
-      return { valid: false, reason: 'Incorrect Owner Secret PIN. Access denied.' };
+      if (!isValidGasUrl(gasUrl)) {
+        return { valid: false, reason: 'Invalid Google Apps Script Web App URL. Endpoint must be https://script.google.com/macros/s/.../exec.' };
+      }
+
+      // Verification MUST be strictly enforced via the cloud endpoint (action=check_auth) against Google Apps Script's AUTH_KEY
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const verifyUrl = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}action=check_auth&key=${encodeURIComponent(pin)}`;
+        const res = await fetch(verifyUrl, {
+          method: 'GET',
+          redirect: 'follow',
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.authorized) {
+            return { valid: true, pin: pin, gasUrl: gasUrl, targetDocId: data.targetDocId || DEFAULT_DOC_ID };
+          } else {
+            return { valid: false, reason: (data && data.message) ? data.message : 'Invalid Owner Secret PIN. Access denied.' };
+          }
+        } else {
+          return { valid: false, reason: `Cloud verification endpoint returned HTTP ${res.status}. Check your Web App deployment.` };
+        }
+      } catch (err) {
+        return { valid: false, reason: 'Could not connect to Google Cloud verification endpoint. Please verify internet connection and Web App URL.' };
+      }
     }
 
     // Unlock Device Setup with PIN from the Setup Lock Screen
@@ -810,6 +833,16 @@
           errEl.style.display = 'block';
         }
         if (pinInput) pinInput.focus();
+        return;
+      }
+
+      if (enteredGas && !isValidGasUrl(enteredGas)) {
+        if (errEl) {
+          errEl.textContent = '❌ Invalid Google Apps Script URL. Endpoint must start with https://script.google.com/macros/s/...';
+          errEl.style.color = 'var(--color-warning)';
+          errEl.style.display = 'block';
+        }
+        if (gasInput) gasInput.focus();
         return;
       }
 
@@ -840,6 +873,7 @@
 
       if (errEl) errEl.style.display = 'none';
       if (pinInput) pinInput.value = '';
+      if (gasInput) gasInput.value = '';
 
       updateAuthStateUI();
       playDeliveryChime();
@@ -1079,8 +1113,8 @@
 
     // Toggle Feed Privacy from the button in Feed Header
     function toggleFeedPrivacyMode() {
-      if (!isOwnerMode && feedPrivacy === 'private') {
-        showToast('🔒 Please enter your Owner Secret PIN to unlock or change feed privacy.');
+      if (!isOwnerMode) {
+        showToast('🔒 Access Denied: Owner PIN authentication required to modify feed privacy.');
         const pinInput = document.getElementById('feed-pin-input');
         if (pinInput) pinInput.focus();
         return;
@@ -1134,6 +1168,10 @@
 
       currentAuthKey = check.pin;
       localStorage.setItem('qd_auth_key', currentAuthKey);
+      if (check.gasUrl) {
+        customGasUrl = check.gasUrl;
+        localStorage.setItem('qd_gas_url', customGasUrl);
+      }
       isOwnerMode = true;
 
       if (errEl) errEl.style.display = 'none';
@@ -1174,12 +1212,12 @@
       const receiptDocLink = document.getElementById('receipt-doc-link');
       if (receiptDocLink) {
         receiptDocLink.style.display = 'none';
-        receiptDocLink.removeAttribute('href');
+        receiptDocLink.setAttribute('href', '#');
       }
 
       lastDeliveredData = null;
 
-      // Switch back to Compose tab
+      // Switch back to Compose tab & reset URL hash
       switchDropTab('compose');
 
       updateAuthStateUI();
@@ -1805,16 +1843,28 @@
         if (receiptDocStatus) {
           if (isOwnerMode && gasSuccess) {
             receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc (Authorized 👑)</strong>';
-            if (receiptDocLink) receiptDocLink.style.display = 'inline-flex';
+            if (receiptDocLink) {
+              receiptDocLink.href = DEFAULT_DOC_URL;
+              receiptDocLink.style.display = 'inline-flex';
+            }
           } else if (isOwnerMode) {
             receiptDocStatus.innerHTML = '<span style="color: var(--color-warning);">⚠️ Cloud Relay not reached (<a href="#setup" onclick="switchDropTab(\'setup\')" style="color: var(--text-accent); text-decoration: underline;">Check Web App URL</a>)</span>';
-            if (receiptDocLink) receiptDocLink.style.display = 'none';
+            if (receiptDocLink) {
+              receiptDocLink.href = '#';
+              receiptDocLink.style.display = 'none';
+            }
           } else if (!isOwnerMode && gasSuccess) {
             receiptDocStatus.innerHTML = '<span style="color: var(--text-tertiary);">🔒 Barred (Public Visitor Mode — Emailed directly to Piyush\'s Gmail)</span>';
-            if (receiptDocLink) receiptDocLink.style.display = 'none';
+            if (receiptDocLink) {
+              receiptDocLink.href = '#';
+              receiptDocLink.style.display = 'none';
+            }
           } else {
             receiptDocStatus.innerHTML = '<span style="color: var(--color-warning);">⚠️ Cloud Relay not configured (<a href="#setup" onclick="switchDropTab(\'setup\')" style="color: var(--text-accent); text-decoration: underline;">Connect Google Doc</a>)</span>';
-            if (receiptDocLink) receiptDocLink.style.display = 'none';
+            if (receiptDocLink) {
+              receiptDocLink.href = '#';
+              receiptDocLink.style.display = 'none';
+            }
           }
         }
 
@@ -2231,9 +2281,9 @@
 
       // Extract custom Google Apps Script URL first so PIN validation knows the cloud endpoint
       if (params.has('gas') || params.has('gas_url') || params.has('script')) {
-        const gasVal = params.get('gas') || params.get('gas_url') || params.get('script');
-        if (gasVal && gasVal.trim()) {
-          customGasUrl = gasVal.trim();
+        const gasVal = (params.get('gas') || params.get('gas_url') || params.get('script') || '').trim();
+        if (gasVal && isValidGasUrl(gasVal)) {
+          customGasUrl = gasVal;
           localStorage.setItem('qd_gas_url', customGasUrl);
         }
       }
@@ -2265,18 +2315,26 @@
               }
               isOwnerMode = true;
               updateAuthStateUI();
+              if (window.location.hash === '#feed') {
+                fetchRecentDrops();
+                initLiveStream();
+              }
               showToast('👑 Owner Mode Unlocked via Bookmark Link!');
             } else {
               showToast('⚠️ Owner PIN from URL was rejected: ' + (check.reason || 'Invalid PIN'), 4500);
             }
           });
         }
-      } else if (currentAuthKey) {
-        // Background verify previously stored PIN on this trusted device
+      } else if (currentAuthKey && customGasUrl) {
+        // Strictly verify stored PIN against the cloud endpoint on startup
         validateOwnerPin(currentAuthKey, customGasUrl).then(check => {
           if (check.valid) {
             isOwnerMode = true;
             updateAuthStateUI();
+            if (window.location.hash === '#feed') {
+              fetchRecentDrops();
+              initLiveStream();
+            }
           } else {
             // Expired or invalid PIN in localStorage
             localStorage.removeItem('qd_auth_key');
@@ -2331,6 +2389,18 @@
       // Auto-send parameter
       if (params.get('auto') === '1' && msgInput.value) {
         document.getElementById('drop-form').requestSubmit();
+      }
+    });
+
+    // Dynamic Hash Navigation Listener (back/forward & in-page anchors)
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash;
+      if (hash === '#setup') {
+        switchDropTab('setup');
+      } else if (hash === '#feed') {
+        switchDropTab('feed');
+      } else if (hash === '#compose' || !hash) {
+        switchDropTab('compose');
       }
     });
   </script>
