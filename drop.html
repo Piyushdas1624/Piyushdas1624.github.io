@@ -11,7 +11,7 @@
 
   <!-- Title & SEO -->
   <title>QuickDrop — Send Instant Note or Link to Piyush</title>
-  <meta name="description" content="Instant Zero-Extra-Apps note relay. Casual visitor messages chime Piyush's phone directly via native Gmail notifications, while owner notes permanently archive to private Google Docs.">
+  <meta name="description" content="Instant Zero-Extra-Apps note relay. Casual visitor messages deliver directly to Piyush's Google Doc Visitor Inbox with anti-spam shields, while owner notes permanently archive to private Google Doc.">
   <link rel="canonical" href="https://piyushdas1624.github.io/drop.html">
 
   <meta name="theme-color" content="#0a0a0f">
@@ -69,7 +69,7 @@
           QuickDrop
         </h1>
         <p class="section-desc">
-          On a random laptop or in a hurry? Send ideas, pastebin links, code, or notes straight to Piyush with zero extra apps! Public visitor drops ring his phone natively via Gmail, while owner drops sync permanently to his private Google Doc.
+          On a random laptop or in a hurry? Send ideas, pastebin links, code, or notes straight to Piyush with zero extra apps! Public visitor drops are delivered directly to Piyush's Google Doc (Visitor Inbox), while owner drops sync permanently to his private Google Doc.
         </p>
       </div>
 
@@ -113,7 +113,7 @@
             </div>
             <div class="receipt-row">
               <span>Delivery Route:</span>
-              <span id="receipt-route">Direct to Piyush's Phone via Gmail Chime 🔔 (Zero Extra Apps)</span>
+              <span id="receipt-route">Delivered directly to Piyush's Google Doc (Visitor Inbox)</span>
             </div>
             <div class="receipt-row">
               <span>Google Doc Archive:</span>
@@ -159,7 +159,7 @@
           <div class="drop-badge-row" style="flex-wrap: wrap; gap: var(--space-2);">
             <div class="status-indicator">
               <span class="status-pulse" aria-hidden="true"></span>
-              <span>Relay Ready &bull; Native Phone Chime</span>
+              <span>Cloud Relay Ready &bull; Google Doc Connected</span>
             </div>
             <div id="mode-pill" class="mode-indicator visitor" onclick="handleModePillClick()" title="Click to manage Owner PIN or switch modes">
               <span id="mode-icon">👤</span>
@@ -195,6 +195,9 @@
           </div>
 
           <form id="drop-form" onsubmit="handleDropSubmit(event)">
+            <!-- Invisible Honeypot Anti-Spam Field -->
+            <input type="text" name="hp_field" id="hp-field" style="display:none !important; position:absolute; left:-9999px;" tabindex="-1" autocomplete="off" />
+
             <!-- Sender & Title Row -->
             <div class="form-row">
               <div class="form-group">
@@ -257,13 +260,13 @@
               <button type="submit" id="submit-btn" class="send-btn-main">
                 <span id="btn-text">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                  Send to Piyush's Phone (Instant Chime 🔔)
+                  Send to Piyush (Google Doc Inbox 📬)
                 </span>
                 <span id="btn-loader" class="btn-spinner" style="display:none;" aria-hidden="true"></span>
               </button>
 
               <div id="form-security-subtext" style="font-size: var(--text-xs); color: var(--text-tertiary);">
-                🔒 Public Visitor Mode &bull; Native Phone Chime via Gmail &bull; Private Doc Protected
+                📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)
               </div>
             </div>
           </form>
@@ -276,9 +279,9 @@
             How does this reach Piyush? (Zero Extra Apps)
           </div>
           <p class="info-box-desc">
-            When you hit Send, this page routes your note with <strong>Zero Extra Apps</strong>:
-            <br>&bull; <strong>Casual Visitors:</strong> Message sends an instant email notification straight to Piyush's Gmail inbox, chiming his phone natively without downloading any app! Piyush's private Google Doc is strictly protected and untouched.
-            <br>&bull; <strong>Owner Mode:</strong> When Piyush enters his Secret PIN, drops are permanently recorded into his private Google Doc.
+            When you hit Send, this page routes your note to Piyush's Google Doc:
+            <br>&bull; <strong>Casual Visitors:</strong> Message is delivered directly to Piyush's Google Doc (Visitor Inbox) with anti-spam protection, no accounts or extra apps needed!
+            <br>&bull; <strong>Owner Mode:</strong> When Piyush enters his Secret PIN, drops are permanently recorded into his private Google Doc with unlimited formatting and full archive access.
           </p>
         </div>
 
@@ -425,12 +428,12 @@
     const DEFAULT_TOPIC = 'piyush-drop-1624';
     const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
     const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit';
-    const DEFAULT_GAS_URL = ''; // Deployed Google Apps Script Web App /exec URL (set once deployed to enable native Gmail chimes for all public visitors)
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwvo63b7RjzgB4jxnU-OnJm2sD_TUAIwB65SrILA9WW_gIywWE-FCrXJDsp4L7pfzHUCg/exec'; // Active Google Apps Script Web App URL for Option 3A Two-Compartment Vault
     
     // State variables
     let currentTopic = localStorage.getItem('qd_topic') || DEFAULT_TOPIC;
     let customWebhook = localStorage.getItem('qd_webhook') || '';
-    let customGasUrl = localStorage.getItem('qd_gas_url') || DEFAULT_GAS_URL || '';
+    let customGasUrl = (localStorage.getItem('qd_gas_url') && localStorage.getItem('qd_gas_url').trim()) ? localStorage.getItem('qd_gas_url').trim() : DEFAULT_GAS_URL;
     let currentAuthKey = localStorage.getItem('qd_auth_key') || '';
     let feedPrivacy = localStorage.getItem('qd_feed_privacy') || 'private'; // 'private' (default) or 'public'
     let isOwnerMode = false; // Strictly locked until verified against Google Cloud
@@ -696,9 +699,9 @@
         showToast('No receipt to copy.');
         return;
       }
-      const docInfo = lastDeliveredData.gdocs
-        ? '\nGoogle Doc Archive: Permanent (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s) [Authorized 👑]'
-        : '\nDelivery Route: Native Gmail Phone Chime (Public Visitor Mode)';
+      const docInfo = lastDeliveredData.isOwner
+        ? '\nGoogle Doc Archive: Permanent Private Vault (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s) [Owner 👑]'
+        : "\nDelivery Route: Delivered directly to Piyush's Google Doc (Visitor Inbox)";
       const text = `QuickDrop Receipt ${lastDeliveredData.id}\nTarget: ${lastDeliveredData.topic}${docInfo}\nTimestamp: ${lastDeliveredData.time}\nSender: ${lastDeliveredData.sender}\nTitle: ${lastDeliveredData.title}\n\n${lastDeliveredData.message}`;
       safeCopy(text, 'Delivery receipt copied!');
     }
@@ -903,10 +906,10 @@
 
       container.innerHTML = `
         <h2 style="font-size: var(--text-xl); font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">
-          📱 How to Receive on Your Devices (Zero Extra Apps)
+          📱 How QuickDrop Works (Option 3A Two-Compartment Vault)
         </h2>
         <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-6);">
-          QuickDrop routes messages using Google Cloud. Public visitor drops chime your phone natively via Gmail, while owner notes archive permanently into your private Google Doc.
+          QuickDrop routes messages using Google Cloud. Public visitor drops are delivered directly to Piyush's Google Doc (Visitor Inbox) with anti-spam shields, while owner notes archive permanently into your private Owner vault.
         </p>
 
         <!-- 0. Owner Access Control & Security PIN (Zero-Knowledge Architecture) -->
@@ -924,7 +927,7 @@
           <p class="info-box-desc" style="margin-top: var(--space-2); margin-bottom: var(--space-3);">
             <strong>Zero-Knowledge Cloud Security (No Secrets in GitHub):</strong> Because this repository is hosted publicly on GitHub, hardcoding any PIN in code is insecure.
             Instead, your Secret PIN is stored <strong>ONLY in Google Apps Script's private Script Properties</strong> (<code>AUTH_KEY</code>) on Google's cloud server.
-            Public visitors can only chime your phone via email notification, while only you with the secret PIN can unlock the feed and write to your private Google Doc!
+            Public visitors can submit notes into your Google Doc Visitor Inbox with automated anti-spam and rate limiting, while only you with the secret PIN can unlock the feed and write to your private Owner compartment!
           </p>
 
           <div class="form-row" style="margin-bottom: var(--space-3);">
@@ -968,15 +971,14 @@
           </div>
         </div>
 
-        <!-- 1. Zero Extra Apps — Native Smartphone Push Alerts -->
+        <!-- 1. Two-Compartment Vault — Zero Extra Permissions Needed -->
         <div class="info-box">
           <div class="info-box-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
-            1. Zero Extra Apps — Native Smartphone Chime (Gmail)
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            1. Option 3A Two-Compartment Vault (Zero Email Permissions)
           </div>
           <p class="info-box-desc">
-            <strong>No third-party apps to install!</strong> Because Android and iOS already have the official Gmail or Mail app pre-installed with notifications enabled, any public visitor drop triggers an immediate email straight to your Gmail inbox (<code>Session.getEffectiveUser().getEmail()</code>).
-            Your phone chimes and vibrates natively with the visitor's note, title, category, and link.
+            <strong>Zero third-party apps and zero email scopes!</strong> Google Apps Script operates cleanly with DocumentApp permissions alone. Public visitor notes are safely written to the [PUBLIC VISITOR MESSAGE] compartment with honeypot and rate-limit shields, while owner notes are saved to [OWNER NOTE] in Google Blue.
           </p>
         </div>
 
@@ -994,7 +996,7 @@
 
           <p class="info-box-desc" style="margin-top: var(--space-2); margin-bottom: var(--space-3);">
             Connecting your private Google Apps Script Web App turns your Google Doc into a <strong>permanent, searchable chronological log</strong> of every single note, code snippet, and link you ever drop.
-            It also powers the instant Gmail chime for public visitor drops!
+            It powers instant permanent archiving for both your private notes and public visitor messages!
           </p>
 
           <div class="form-group" style="margin-bottom: var(--space-3);">
@@ -1031,7 +1033,7 @@
             <ul style="font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; margin: 0; padding-left: var(--space-4);">
               <li><strong>Your Google Doc stays "Restricted":</strong> Only you (Piyush) can open or view the document. You never need to set it to public or share it.</li>
               <li><strong>Protected by Cloud Script Properties:</strong> Even if someone inspects GitHub, your secret PIN is never in Git. It lives strictly in Google's cloud.</li>
-              <li><strong>Visitor drops are barred from Doc:</strong> Casual visitor drops send an instant email to your Gmail; they never touch or alter your Google Doc.</li>
+              <li><strong>Two-Compartment Separation:</strong> Casual visitor drops are tagged into [PUBLIC VISITOR MESSAGE] with anti-spam rate limiting and length truncation; they cannot alter your owner notes.</li>
               <li><strong>Blocked from AI Web Crawlers:</strong> Search engines, GPTBot, ClaudeBot, and public web scrapers cannot crawl, view, or scrape your private Google Doc.</li>
               <li><strong>Authenticated Feed History:</strong> Only authorized owner requests can read back recent notes from the Google Doc backend.</li>
             </ul>
@@ -1074,7 +1076,7 @@
             4. (Optional) Secondary Channel &amp; Webhook Configuration
           </div>
           <p class="info-box-desc" style="margin-bottom: var(--space-3);">
-            Optional extra pub/sub topic for ntfy.sh or Discord webhooks. If you only want native phone chimes via Gmail and Google Doc sync, you can leave these default or empty:
+            Optional extra pub/sub topic for ntfy.sh or Discord webhooks. If you only want direct Google Doc sync, you can leave these default or empty:
           </p>
           <div class="form-group">
             <label class="form-label" for="custom-topic-input">Optional channel topic name:</label>
@@ -1421,17 +1423,17 @@
       if (customGasUrl && isOwnerMode) {
         if (docSyncDot) docSyncDot.style.background = 'var(--color-success)';
         if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-success); font-weight:600;">Active 👑</span>';
-        if (docSyncPill) docSyncPill.title = 'Every note will be permanently appended to your Google Doc.';
+        if (docSyncPill) docSyncPill.title = 'Every note will be permanently saved to your Private Google Doc.';
         if (setupStatusBadge) {
           setupStatusBadge.className = 'badge badge-cloud-doc';
           setupStatusBadge.innerHTML = '✓ Connected &amp; Authorized (1EgAUJU...)';
         }
       } else if (customGasUrl && !isOwnerMode) {
         if (docSyncDot) docSyncDot.style.background = 'var(--text-accent)';
-        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--text-accent);">Protected 🛡️ (Gmail Chime Active)</span>';
-        if (docSyncPill) docSyncPill.title = 'Public visitor mode: Google Doc is barred; messages email directly to Piyush\'s phone via Gmail.';
+        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--text-accent);">Visitor Inbox 📬</span>';
+        if (docSyncPill) docSyncPill.title = "Public visitor mode: Delivered directly to Piyush's Google Doc (Visitor Inbox).";
         if (setupStatusBadge) {
-          setupStatusBadge.className = 'badge badge-email';
+          setupStatusBadge.className = 'badge badge-cloud-doc';
           setupStatusBadge.innerHTML = '✓ Cloud Relay Connected (Visitor Mode / Enter Owner PIN)';
         }
       } else {
@@ -1440,7 +1442,7 @@
           if (isOwnerMode) {
             docSyncText.innerHTML = 'Doc Sync: <a href="#setup" onclick="switchDropTab(\'setup\')" style="color:var(--color-warning); text-decoration:underline;">Configure</a>';
           } else {
-            docSyncText.innerHTML = 'Relay: <span style="color:var(--text-accent);">Native Chime 🔔</span>';
+            docSyncText.innerHTML = 'Relay: <span style="color:var(--text-accent);">Connecting...</span>';
           }
         }
         if (docSyncPill) docSyncPill.title = isOwnerMode ? 'Connect your Google Apps Script Web App URL in Device Setup.' : 'Public visitor relay is ready.';
@@ -1483,20 +1485,18 @@
         } else if (isOwnerMode) {
           btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send Note (Doc Relay Offline) ⚠️`;
         } else if (customGasUrl) {
-          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush's Phone (Instant Chime 🔔)`;
+          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush (Google Doc Inbox 📬)`;
         } else {
           btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush's Devices`;
         }
       }
       if (formSecuritySubtext) {
         if (isOwnerMode && customGasUrl) {
-          formSecuritySubtext.innerHTML = '🔒 Owner Mode Active &bull; Instant Push + Permanent Google Doc Sync';
+          formSecuritySubtext.innerHTML = '👑 Permanently saved to your Private Google Doc';
         } else if (isOwnerMode) {
           formSecuritySubtext.innerHTML = '⚠️ Owner Mode Active &bull; Google Apps Script URL not configured in Device Setup';
-        } else if (customGasUrl) {
-          formSecuritySubtext.innerHTML = '🔒 Public Visitor Mode &bull; Native Phone Chime via Gmail &bull; Private Doc Protected';
         } else {
-          formSecuritySubtext.innerHTML = '🔒 Public Visitor Mode &bull; Push Notification Alert &bull; Private Doc Protected';
+          formSecuritySubtext.innerHTML = '📬 Delivered directly to Piyush\'s Google Doc (Visitor Inbox)';
         }
       }
 
@@ -1680,8 +1680,22 @@
         const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
         const timeStr = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
 
-        // ── 1. Primary Dispatch: Google Apps Script Cloud Relay (Zero Extra Apps) ──
+        // ── 1. Primary Dispatch: Google Apps Script Cloud Relay (Option 3A Two-Compartment Vault) ──
         if (customGasUrl) {
+          const hpEl = document.getElementById('hp-field');
+          const hpField = hpEl ? hpEl.value : '';
+
+          let visitorId = '';
+          try {
+            visitorId = localStorage.getItem('qd_visitor_id');
+            if (!visitorId) {
+              visitorId = 'v_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+              localStorage.setItem('qd_visitor_id', visitorId);
+            }
+          } catch (e) {
+            visitorId = 'v_' + Math.random().toString(36).substring(2, 9);
+          }
+
           const gasPayload = {
             dropId: receiptId,
             authKey: isOwnerMode ? currentAuthKey : '',
@@ -1692,7 +1706,9 @@
             url: firstUrl,
             docId: DEFAULT_DOC_ID,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            hp_field: hpField,
+            visitorId: visitorId
           };
 
           try {
@@ -1707,10 +1723,12 @@
               if (data && data.status === 'success') {
                 gasSuccess = true;
                 if (data.mode === 'owner') {
-                  routeDescription = 'Permanent Google Doc Archive (1EgAUJU...) [Owner Verified 👑]';
-                } else if (data.mode === 'visitor') {
-                  routeDescription = 'Direct to Piyush\'s Phone via Gmail Chime 🔔 (Zero Extra Apps)';
+                  routeDescription = '👑 Permanently saved to your Private Google Doc';
+                } else {
+                  routeDescription = "📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)";
                 }
+              } else if (data && data.code === 429) {
+                showToast('⚠️ ' + (data.message || 'Rate limit reached'), 5000);
               }
             }
           } catch (corsErr) {
@@ -1725,8 +1743,8 @@
               });
               gasSuccess = true;
               routeDescription = isOwnerMode
-                ? 'Permanent Google Doc Archive (1EgAUJU...) [Owner Verified 👑]'
-                : 'Direct to Piyush\'s Phone via Gmail Chime 🔔 (Zero Extra Apps)';
+                ? '👑 Permanently saved to your Private Google Doc'
+                : "📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)";
             } catch (noCorsErr) {
               console.warn('Google Cloud Relay notice:', noCorsErr);
             }
@@ -1735,7 +1753,7 @@
 
         if (!routeDescription) {
           if (currentTopic) {
-            routeDescription = 'Instant Push via ntfy.sh (Cloud Gmail Relay not configured)';
+            routeDescription = 'Instant Push via ntfy.sh (Google Doc Relay not configured)';
           } else {
             routeDescription = 'Delivered Locally (No active cloud relay)';
           }
@@ -1834,7 +1852,7 @@
           if (isOwnerMode) {
             receiptAuthStatus.innerHTML = '<strong style="color: var(--text-accent);">👑 Owner Verified (Cloud Secret PIN Accepted)</strong>';
           } else {
-            receiptAuthStatus.innerHTML = '<span style="color: var(--text-tertiary);">👤 Public Visitor Mode (Google Doc Protected)</span>';
+            receiptAuthStatus.innerHTML = '<span style="color: var(--text-tertiary);">👤 Public Visitor Mode (Delivered to Visitor Inbox)</span>';
           }
         }
 
@@ -1842,7 +1860,7 @@
         const receiptDocLink = document.getElementById('receipt-doc-link');
         if (receiptDocStatus) {
           if (isOwnerMode && gasSuccess) {
-            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc (Authorized 👑)</strong>';
+            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc (Owner Vault 👑)</strong>';
             if (receiptDocLink) {
               receiptDocLink.href = DEFAULT_DOC_URL;
               receiptDocLink.style.display = 'inline-flex';
@@ -1854,7 +1872,7 @@
               receiptDocLink.style.display = 'none';
             }
           } else if (!isOwnerMode && gasSuccess) {
-            receiptDocStatus.innerHTML = '<span style="color: var(--text-tertiary);">🔒 Barred (Public Visitor Mode — Emailed directly to Piyush\'s Gmail)</span>';
+            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Delivered directly to Piyush\'s Google Doc (Visitor Inbox 📬)</strong>';
             if (receiptDocLink) {
               receiptDocLink.href = '#';
               receiptDocLink.style.display = 'none';
@@ -1884,9 +1902,9 @@
 
         if (gasSuccess) {
           if (isOwnerMode) {
-            showToast('👑 Delivered to phone & permanently saved to Google Doc!');
+            showToast('👑 Permanently saved to your Private Google Doc');
           } else {
-            showToast('🔔 Delivered to Piyush\'s phone via instant Gmail chime!');
+            showToast("📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)");
           }
         } else if (currentTopic) {
           showToast(isOwnerMode ? 'Delivered via ntfy (Google Doc Relay not connected)' : 'Delivered to Piyush via ntfy push notification!');

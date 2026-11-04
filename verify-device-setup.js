@@ -301,6 +301,105 @@ async function main() {
     assert(dropHtml.includes("tabName === 'compose'"), 'Must clear #hash on compose tab');
   });
 
+  console.log('\n--- GROUP 8: Option 3A Client Wiring & Two-Compartment UI ---');
+  runTest('DEFAULT_GAS_URL is permanently wired to active Web App URL', () => {
+    const expectedGasUrl = 'https://script.google.com/macros/s/AKfycbwvo63b7RjzgB4jxnU-OnJm2sD_TUAIwB65SrILA9WW_gIywWE-FCrXJDsp4L7pfzHUCg/exec';
+    assert(
+      dropHtml.includes(`const DEFAULT_GAS_URL = '${expectedGasUrl}';`),
+      'drop.html must wire DEFAULT_GAS_URL to the exact active Web App URL'
+    );
+    assert.strictEqual(
+      isValidGasUrl(expectedGasUrl),
+      true,
+      'Active Web App URL must pass isValidGasUrl validation'
+    );
+  });
+
+  runTest('Invisible anti-spam honeypot input is embedded inside drop-form', () => {
+    assert(
+      dropHtml.includes('<input type="text" name="hp_field" id="hp-field" style="display:none !important; position:absolute; left:-9999px;" tabindex="-1" autocomplete="off" />'),
+      'drop.html must contain the invisible honeypot field hp_field'
+    );
+    assert(
+      dropHtml.includes("hp_field: hpField"),
+      'handleDropSubmit must forward hp_field in gasPayload'
+    );
+  });
+
+  runTest('UI messaging accurately displays Option 3A Visitor and Owner delivery targets', () => {
+    assert(
+      dropHtml.includes("📬 Delivered directly to Piyush's Google Doc (Visitor Inbox)"),
+      'Must contain visitor delivery messaging'
+    );
+    assert(
+      dropHtml.includes("👑 Permanently saved to your Private Google Doc"),
+      'Must contain owner vault messaging'
+    );
+  });
+
+  console.log('\n--- GROUP 9: Option 3A Google Apps Script Backend & Shields ---');
+  const gasScript = fs.readFileSync(path.join(repoDir, 'google-apps-script.js'), 'utf8');
+
+  runTest('google-apps-script.js requests ZERO email scopes (no MailApp or GmailApp calls)', () => {
+    assert(!gasScript.includes('MailApp.sendEmail'), 'Must not call MailApp.sendEmail');
+    assert(!gasScript.includes('GmailApp.sendEmail'), 'Must not call GmailApp.sendEmail');
+    assert(!gasScript.includes('MailApp.'), 'Must contain zero MailApp invocations');
+    assert(!gasScript.includes('GmailApp.'), 'Must contain zero GmailApp invocations');
+  });
+
+  runTest('google-apps-script.js implements honeypot bot trap', () => {
+    assert(gasScript.includes('payload.hp_field'), 'Must inspect payload.hp_field');
+    assert(gasScript.includes("honeypot !== ''"), 'Must detect non-empty honeypot field');
+  });
+
+  runTest('google-apps-script.js enforces rate limiting via CacheService', () => {
+    assert(gasScript.includes('function checkVisitorRateLimit('), 'Must define checkVisitorRateLimit');
+    assert(gasScript.includes('CacheService.getScriptCache()'), 'Must use CacheService');
+    assert(gasScript.includes('count10m >= 5'), 'Must enforce max 5 per 10 minutes');
+    assert(gasScript.includes('countDay >= 30'), 'Must enforce max 30 per day');
+  });
+
+  runTest('google-apps-script.js truncates visitor messages to max 1,500 characters', () => {
+    assert(
+      gasScript.includes('noteData.message.length > 1500'),
+      'Must check for messages exceeding 1500 chars'
+    );
+    assert(
+      gasScript.includes('noteData.message.substring(0, 1500)'),
+      'Must truncate visitor message at 1500 chars'
+    );
+  });
+
+  runTest('google-apps-script.js formats Owner (#1a73e8) and Visitor (#d93025) compartments distinctly', () => {
+    assert(
+      gasScript.includes("titleText = '👑 ' + icon + ' [' + catUpper + '] ' + cleanTitle;"),
+      'Must format owner title with crown and category'
+    );
+    assert(
+      gasScript.includes("titleColor = '#1a73e8';"),
+      'Must style owner title in Google Blue (#1a73e8)'
+    );
+    assert(
+      gasScript.includes("titleText = '📬 [PUBLIC VISITOR MESSAGE] ' + cleanTitle;"),
+      'Must format visitor title with visitor tag'
+    );
+    assert(
+      gasScript.includes("titleColor = '#d93025';"),
+      'Must style visitor title in distinct amber/red (#d93025)'
+    );
+  });
+
+  runTest('google-apps-script.js strictly protects check_auth and get_recent endpoints', () => {
+    assert(
+      gasScript.includes("if (payload.action === 'ping' || payload.action === 'check_auth')"),
+      'Must protect check_auth'
+    );
+    assert(
+      gasScript.includes("if (payload.action === 'get_recent')"),
+      'Must protect get_recent'
+    );
+  });
+
   console.log('\n================================================================');
   console.log(`TEST SUMMARY: ${passedTests} PASSED, ${failedTests} FAILED`);
   console.log('================================================================');

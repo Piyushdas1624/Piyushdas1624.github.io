@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * QUICKDROP -> ZERO-EXTRA-APPS CLOUD RELAY (Google Apps Script)
+ * QUICKDROP -> OPTION 3A: THE SINGLE DOC TWO-COMPARTMENT VAULT
  * ============================================================================
  * 
  * Target Google Doc:
@@ -8,66 +8,49 @@
  * 
  * Target Doc ID: 1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s
  * 
- * PURPOSE & ARCHITECTURE (ZERO EXTRA APPS):
- * No third-party apps (like ntfy) required! This script uses Google Cloud
- * native capabilities to handle both public visitors and private notes:
+ * Active Web App Deployment URL:
+ * https://script.google.com/macros/s/AKfycbwvo63b7RjzgB4jxnU-OnJm2sD_TUAIwB65SrILA9WW_gIywWE-FCrXJDsp4L7pfzHUCg/exec
  * 
- * 1. 📬 PUBLIC VISITORS (NO PIN):
- *    - Casual visitors on your website drop notes, feedback, links, or ideas.
- *    - Google Apps Script immediately sends an email directly to your Gmail inbox
- *      (Session.getEffectiveUser().getEmail()) via MailApp.sendEmail().
- *    - Since Gmail is natively installed on all Android & iOS phones, your phone
- *      instantly chimes/vibrates with a native push alert!
- *    - Public visitors are STRICTLY BARRED from touching your Google Doc.
- *      Your private document stays 100% clean and reserved for your own notes.
+ * ARCHITECTURE (ZERO EMAIL SCOPE REQUIRED):
+ * This script runs cleanly using Google Cloud native DocumentApp permissions alone!
+ * Absolutely NO email service scopes are requested, completely eliminating
+ * authorization errors (Exception: The script does not have permission...).
  * 
- * 2. 👑 OWNER MODE (WITH SECRET PIN):
- *    - When YOU drop notes with your secret Owner PIN, the script appends them
- *      permanently into your private Google Doc (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s).
- *    - It creates a searchable, chronological, permanent knowledge log.
+ * TWO COMPARTMENTS IN ONE PERMANENT VAULT:
  * 
- * 3. 🔒 ZERO-KNOWLEDGE CLOUD SECURITY (NO SECRETS IN GITHUB):
- *    - Your code is hosted in a public GitHub repository. Hardcoding any PIN
- *      in Git is dangerous because anyone browsing GitHub could see it.
- *    - In this script, the Secret PIN is NEVER hardcoded in the codebase!
- *    - The PIN is stored ONLY in Google Apps Script's private "Script Properties"
- *      (server-side environment variables in Google's cloud: AUTH_KEY or OWNER_PIN).
- *    - Script Properties are invisible to GitHub, search crawlers, and the public.
- *    - If no AUTH_KEY is set in Script Properties, the script fails closed and
- *      refuses to execute owner commands until configured.
+ * 1. 👑 OWNER COMPARTMENT (mode === 'owner'):
+ *    - Authenticated with Owner Secret PIN (stored in Script Properties: AUTH_KEY).
+ *    - Formatted with Title: 👑 [OWNER NOTE] <title> in Google Blue (#1a73e8).
+ *    - Full formatting: Monospace & code indentation for code snippets, unlimited size.
+ *    - Direct permanent personal vault access.
  * 
- * 4. 📡 SECURE LIVE FEED (action: 'get_recent'):
- *    - The Live Feed and replies load authenticated history directly from your
- *      Google Doc backend when authorized with your Owner PIN.
+ * 2. 📬 VISITOR COMPARTMENT (mode === 'visitor'):
+ *    - Public visitors dropping notes from your portfolio website without a PIN.
+ *    - Formatted with Title: 📬 [PUBLIC VISITOR MESSAGE] <title> in distinct Amber/Red (#d93025).
+ *    - Timestamped, sender-tagged metadata: [Visitor Inbox 📬].
+ *    - ANTI-SPAM & ABUSE SHIELDS:
+ *      * Honeypot Shield: Inspects payload.hp_field. If filled by automated spambots,
+ *        returns HTTP 200 success but silently discards without writing to the doc.
+ *      * Rate Limiting via CacheService: Enforces max 5 messages per 10 minutes,
+ *        max 30 messages per day per client signature.
+ *      * Message Length Cap: Automatically truncates visitor messages to max 1,500
+ *        characters to prevent document spam bomb attacks.
+ * 
+ * 3. 🔒 ZERO-KNOWLEDGE CLOUD SECURITY:
+ *    - Owner PIN is stored ONLY in Google Apps Script's private Script Properties (AUTH_KEY).
+ *    - Never hardcoded in GitHub or client-side JavaScript.
+ *    - action: 'check_auth' and action: 'get_recent' are strictly protected by Owner PIN.
  * 
  * ----------------------------------------------------------------------------
- * 🚀 60-SECOND DEPLOYMENT INSTRUCTIONS:
+ * 🚀 QUICK DEPLOYMENT / UPDATE INSTRUCTIONS:
  * ----------------------------------------------------------------------------
- * 1. Open: https://script.google.com/home/start (or type script.new in browser)
- * 2. Click "+ New project".
- * 3. Name the project: "QuickDrop-Relay" (top left).
- * 4. Replace all code in "Code.gs" with this entire file.
- * 5. 🔒 SET YOUR SECRET PIN IN SCRIPT PROPERTIES (Zero Secrets in Git!):
- *      - Click the gear icon (⚙️ Project Settings) on the left sidebar.
- *      - Scroll down to "Script Properties".
- *      - Click "Add script property".
- *      - Property: AUTH_KEY (or OWNER_PIN)
- *      - Value: <choose your private PIN or password, e.g. a strong secret PIN>
- *      - (Optional): Add OWNER_EMAIL if you want visitor emails sent to a specific address.
- *      - Click "Save script properties".
- * 6. Click the blue "Deploy" button (top-right) -> choose "New deployment".
- * 7. Click the gear icon (⚙️) next to "Select type" and choose "Web app".
- * 8. Set the configuration:
- *      - Description: "QuickDrop Zero-Extra-Apps Relay with Cloud Script Properties"
- *      - Execute as: "Me (<your-email>@gmail.com)"  <-- REQUIRED!
- *      - Who has access: "Anyone"                   <-- REQUIRED!
- * 9. Click "Deploy" (Review permissions -> Advanced -> Go to QuickDrop-Relay (unsafe) -> Allow).
- * 10. Copy the "Web app URL" (ends in /exec).
- * 11. Open QuickDrop (drop.html), switch to the "Device Setup" tab:
- *      - Paste the /exec URL into the "Google Apps Script Web App URL" box.
- *      - Enter your Secret PIN in the "Owner Secret PIN" box.
- *      - Click "Save PIN & Settings".
- *      - Click "Test Google Doc Sync" to verify write access.
+ * 1. Open your project at https://script.google.com
+ * 2. Select your "QuickDrop-Relay" project.
+ * 3. Replace all code in "Code.gs" with this entire file.
+ * 4. Verify Script Properties (⚙️ Project Settings > Script Properties):
+ *      - Property: AUTH_KEY
+ *      - Value: <your secret PIN>
+ * 5. Click "Deploy" > "Manage deployments" > Edit (pencil icon) > New version > Deploy.
  * ============================================================================
  */
 
@@ -98,28 +81,6 @@ function getEffectiveSecretKey() {
     Logger.log('Property read notice: ' + e);
   }
   return null; // Fails closed! No hardcoded fallback.
-}
-
-/**
- * Retrieves the destination email for public visitor notifications
- */
-function getOwnerEmail() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var customEmail = props.getProperty('OWNER_EMAIL') || props.getProperty('NOTIFICATION_EMAIL');
-    if (customEmail && customEmail.trim()) {
-      return customEmail.trim();
-    }
-  } catch (e) {}
-
-  try {
-    var effectiveUser = Session.getEffectiveUser();
-    if (effectiveUser && effectiveUser.getEmail()) {
-      return effectiveUser.getEmail();
-    }
-  } catch (e) {}
-
-  return 'piyushdas1624@gmail.com';
 }
 
 /**
@@ -170,7 +131,49 @@ function isAuthorized(payload, e) {
 }
 
 /**
- * HTTP POST Handler — Receives drops, routes visitor notes to Gmail, and syncs owner notes to Google Doc
+ * Rate Limiter for Public Visitors using CacheService
+ * Limits: Max 5 messages per 10 minutes, Max 30 messages per day per signature
+ */
+function checkVisitorRateLimit(signature) {
+  try {
+    var cache = CacheService.getScriptCache();
+    if (!cache) return { allowed: true };
+
+    var now = new Date();
+    var dayKey = Utilities.formatDate(now, 'UTC', 'yyyyMMdd');
+    var key10m = 'rl_10m_' + signature;
+    var keyDay = 'rl_day_' + dayKey + '_' + signature;
+
+    var count10mStr = cache.get(key10m);
+    var count10m = count10mStr ? parseInt(count10mStr, 10) : 0;
+    if (count10m >= 5) {
+      return {
+        allowed: false,
+        reason: 'Rate limit reached: Maximum 5 messages per 10 minutes for public visitors. Please wait a few minutes before submitting another note.'
+      };
+    }
+
+    var countDayStr = cache.get(keyDay);
+    var countDay = countDayStr ? parseInt(countDayStr, 10) : 0;
+    if (countDay >= 30) {
+      return {
+        allowed: false,
+        reason: 'Daily limit reached: Maximum 30 messages per day for public visitors. Piyush has received your earlier notes!'
+      };
+    }
+
+    // Increment rate limit counters (CacheService max expiration is 21600s / 6 hours)
+    cache.put(key10m, String(count10m + 1), 600); // 10 minutes window
+    cache.put(keyDay, String(countDay + 1), 21600); // Active period window
+    return { allowed: true };
+  } catch (cacheErr) {
+    Logger.log('Rate limit check notice: ' + cacheErr);
+    return { allowed: true };
+  }
+}
+
+/**
+ * HTTP POST Handler — Routes notes to Two-Compartment Google Doc Vault
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -229,7 +232,7 @@ function doPost(e) {
       return createJsonResponse(authResponse);
     }
 
-    // 3. Test connection action: writes a real verification note to Google Doc (requires Owner PIN)
+    // 3. Test connection action: writes a real verification note to Owner Compartment
     if (payload.action === 'test_connection') {
       var testAuth = isAuthorized(payload, e);
       if (!testAuth.authorized) {
@@ -246,9 +249,11 @@ function doPost(e) {
         sender: payload.sender || 'QuickDrop Verification Test',
         category: payload.category || 'idea',
         timezone: payload.timezone
-      });
+      }, 'owner');
+
       return createJsonResponse({
         status: 'success',
+        mode: 'owner',
         message: 'Test entry successfully appended to Google Doc!',
         docId: targetDocId,
         timestamp: testResult.formattedTime,
@@ -279,7 +284,20 @@ function doPost(e) {
       });
     }
 
-    // 5. Standard Note Payload
+    // 5. Anti-Spam Shield 1: Honeypot check
+    var honeypot = (payload.hp_field !== undefined && payload.hp_field !== null) ? String(payload.hp_field).trim() : '';
+    if (honeypot !== '') {
+      // Automated bot detected: return success but silently discard without writing
+      return createJsonResponse({
+        status: 'success',
+        mode: 'visitor',
+        route: 'google_doc_visitor',
+        message: '📬 Delivered directly to Piyush\'s Google Doc (Visitor Inbox)',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // 6. Standard Note Payload Construction
     var noteData = {
       title: payload.title || '',
       message: payload.message || '',
@@ -291,7 +309,7 @@ function doPost(e) {
     };
 
     // If message is completely empty, don't process blank entries
-    if (!noteData.message && !noteData.url && (!noteData.title || noteData.title === 'QuickDrop Note')) {
+    if (!noteData.message && !noteData.url && (!noteData.title || noteData.title === 'QuickDrop Note' || noteData.title === 'Visitor Message')) {
       return createJsonResponse({
         status: 'error',
         code: 400,
@@ -299,16 +317,37 @@ function doPost(e) {
       });
     }
 
-    // 6. DUAL-PATH ROUTING LOGIC:
-    // Check if sender provided valid Owner Secret PIN
+    // 7. Check Owner PIN Authorization
     var auth = isAuthorized(payload, e);
+    var isOwner = auth.authorized;
 
-    // Server-Side Idempotency & Deduplication (prevents duplicate emails & doc appends on client retries)
+    // 8. Visitor Compartment Anti-Spam Shields (Rate Limiting & Length Cap)
+    if (!isOwner) {
+      // Visitor signature identifier for rate limiting
+      var rawSig = (payload.visitorId || payload.sender || 'visitor').toString().trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 40);
+      var visitorSig = rawSig || 'guest';
+
+      var rlCheck = checkVisitorRateLimit(visitorSig);
+      if (!rlCheck.allowed) {
+        return createJsonResponse({
+          status: 'error',
+          code: 429,
+          message: rlCheck.reason
+        });
+      }
+
+      // Truncate visitor messages to max 1,500 characters to prevent spam bombs
+      if (noteData.message && noteData.message.length > 1500) {
+        noteData.message = noteData.message.substring(0, 1500) + '\n\n[Message truncated at 1,500 characters by QuickDrop anti-abuse shield]';
+      }
+    }
+
+    // 9. Server-Side Idempotency & Deduplication
     var dropId = (payload.dropId || payload.id || '').toString().trim();
     if (!dropId && noteData.message) {
       try {
-        var rawSig = (auth.authorized ? 'owner_' : 'visitor_') + (noteData.sender || '') + '|' + (noteData.title || '') + '|' + (noteData.message || '') + '|' + (noteData.url || '');
-        dropId = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, rawSig));
+        var dedupSig = (isOwner ? 'owner_' : 'visitor_') + (noteData.sender || '') + '|' + (noteData.title || '') + '|' + (noteData.message || '') + '|' + (noteData.url || '');
+        dropId = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, dedupSig));
       } catch (sigErr) {
         dropId = '';
       }
@@ -320,12 +359,12 @@ function doPost(e) {
         if (cache && cache.get('drop_' + dropId)) {
           return createJsonResponse({
             status: 'success',
-            mode: auth.authorized ? 'owner' : 'visitor',
+            mode: isOwner ? 'owner' : 'visitor',
             duplicate: true,
-            message: auth.authorized 
-              ? 'Note already permanently appended to Google Doc (idempotent)' 
-              : 'Visitor note already delivered to Piyush\'s Gmail (idempotent)',
-            docId: auth.authorized ? targetDocId : undefined,
+            message: isOwner 
+              ? '👑 Note already permanently saved to your Private Google Doc (idempotent)' 
+              : '📬 Visitor message already delivered to Piyush\'s Google Doc (idempotent)',
+            docId: targetDocId,
             timestamp: new Date().toISOString()
           });
         }
@@ -337,35 +376,34 @@ function doPost(e) {
       }
     }
 
-    if (auth.authorized) {
+    // 10. Execute Two-Compartment Append
+    var appendResult = appendNoteToGoogleDoc(targetDocId, noteData, isOwner ? 'owner' : 'visitor');
+
+    if (isOwner) {
       // ══════════════════════════════════════════════════════════════════════
-      // 👑 OWNER PATH: Permanently append to private Google Doc
+      // 👑 OWNER COMPARTMENT: Full formatting, blue header, unlimited length
       // ══════════════════════════════════════════════════════════════════════
-      var appendResult = appendNoteToGoogleDoc(targetDocId, noteData);
       return createJsonResponse({
         status: 'success',
         mode: 'owner',
-        route: 'google_doc',
-        message: 'Note permanently appended to Google Doc (Owner Verified 👑)',
+        route: 'google_doc_owner',
+        message: '👑 Permanently saved to your Private Google Doc',
         docId: targetDocId,
         timestamp: appendResult.formattedTime,
         entryIndex: appendResult.entryIndex
       });
-
     } else {
       // ══════════════════════════════════════════════════════════════════════
-      // 📬 PUBLIC VISITOR PATH: Zero Extra Apps -> Email directly to Gmail
-      // Google Doc is 100% barred and untouched!
-      // Phone instantly chimes via native Gmail push notification!
+      // 📬 VISITOR COMPARTMENT: Distinct amber/red tag, rate-limited, length capped
       // ══════════════════════════════════════════════════════════════════════
-      var emailResult = sendVisitorEmailNotification(noteData);
       return createJsonResponse({
         status: 'success',
         mode: 'visitor',
-        route: 'email',
-        message: 'Visitor note securely delivered to Piyush\'s phone via Gmail chime 🔔 (Google Doc protected & untouched)',
-        recipient: emailResult.recipient,
-        timestamp: emailResult.timestamp
+        route: 'google_doc_visitor',
+        message: '📬 Delivered directly to Piyush\'s Google Doc (Visitor Inbox)',
+        docId: targetDocId,
+        timestamp: appendResult.formattedTime,
+        entryIndex: appendResult.entryIndex
       });
     }
 
@@ -381,10 +419,10 @@ function doPost(e) {
 }
 
 /**
- * HTTP GET Handler — Friendly status page, PIN check & browser diagnostic
+ * HTTP GET Handler — Friendly status page, PIN check & diagnostic
  */
 function doGet(e) {
-  // Support remote PIN verification & health ping: ?action=check_auth&key=YOUR_PIN or ?action=ping&key=...
+  // Support remote PIN verification & health ping: ?action=check_auth&key=YOUR_PIN
   if (e && e.parameter && (e.parameter.action === 'check_auth' || e.parameter.action === 'ping' || e.parameter.check === '1')) {
     var check = isAuthorized(null, e);
     var getAuthResp = {
@@ -398,7 +436,6 @@ function doGet(e) {
       authRequired: true,
       timestamp: new Date().toISOString()
     };
-    // Only reveal doc ID to authorized owner requests
     if (check.authorized) {
       getAuthResp.targetDocId = DEFAULT_DOC_ID;
     }
@@ -451,13 +488,13 @@ function doGet(e) {
     try {
       var testResult = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
         title: 'QuickDrop Browser Test Ping',
-        message: 'This is a test entry confirming your Google Apps Script relay is properly connected with verified Owner PIN.',
+        message: 'This is a test entry confirming your Option 3A Two-Compartment Vault is properly connected with verified Owner PIN.',
         sender: 'Browser GET Test',
         category: 'idea'
-      });
+      }, 'owner');
       return createJsonResponse({
         status: 'success',
-        message: 'Test entry written successfully to Google Doc!',
+        message: 'Test entry written successfully to Owner Compartment!',
         docId: DEFAULT_DOC_ID,
         timestamp: testResult.formattedTime
       });
@@ -473,104 +510,27 @@ function doGet(e) {
   var activeSecret = getEffectiveSecretKey();
   return createJsonResponse({
     status: 'online',
-    service: 'QuickDrop Cloud Relay (Zero Extra Apps)',
+    service: 'QuickDrop Cloud Relay (Option 3A - Single Doc Two-Compartment Vault)',
     authProtection: activeSecret ? 'ENABLED (Zero-Knowledge Cloud Script Properties)' : 'UNCONFIGURED (Set AUTH_KEY in Project Settings)',
-    docProtection: 'RESTRICTED (Owner PIN required)',
+    docProtection: 'TWO-COMPARTMENT ACTIVE (Owner Vault 👑 & Visitor Inbox 📬)',
     routing: {
-      public_visitors: 'Emails message straight to Piyush\'s Gmail inbox (native smartphone chime 🔔, Google Doc 100% protected)',
-      owner: 'Appends note permanently into private Google Doc (requires secret PIN)'
+      public_visitors: '📬 Delivered directly to Piyush\'s Google Doc (Visitor Inbox) with anti-spam shields & rate limiting',
+      owner: '👑 Permanently saved to your Private Google Doc (Owner Vault with PIN)'
     },
-    instruction: 'Send an HTTP POST with JSON { authKey, title, message, sender, category, url } to relay notes.',
+    permissions: 'Zero Email Scope Required (DocumentApp only)',
+    instruction: 'Send an HTTP POST with JSON { authKey, title, message, sender, category, url, hp_field } to relay notes.',
     timestamp: new Date().toISOString()
   });
 }
 
 /**
- * 📬 Sends native Gmail push notification when a public visitor drops a note
- * Keeps Google Doc 100% clean and chimes Piyush's phone instantly via Gmail app!
+ * Formats and appends a note entry into the Google Doc Two-Compartment Vault
+ * @param {string} docId - Target Google Doc ID
+ * @param {Object} note - Note payload
+ * @param {string} mode - 'owner' or 'visitor'
  */
-function sendVisitorEmailNotification(note) {
-  var recipient = getOwnerEmail();
-  var tz = (note.timezone && typeof note.timezone === 'string') ? note.timezone : DEFAULT_TIMEZONE;
-  var now = note.timestamp ? new Date(note.timestamp) : new Date();
-  if (isNaN(now.getTime())) now = new Date();
-
-  var dateStr = '';
-  try {
-    dateStr = Utilities.formatDate(now, tz, 'yyyy-MM-dd HH:mm:ss');
-  } catch (e) {
-    dateStr = Utilities.formatDate(now, DEFAULT_TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
-  }
-  var formattedTime = dateStr + ' (' + tz + ')';
-
-  var catUpper = (note.category || 'NOTE').toUpperCase();
-  var senderName = note.sender || 'Public Visitor';
-  var subjectTitle = (note.title && note.title.trim()) ? note.title.trim() : (catUpper + ' from ' + senderName);
-  var subject = '📬 [QuickDrop Visitor] ' + subjectTitle;
-
-  var plainBody = 'You received a new visitor message via QuickDrop:\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-    '👤 Sender:   ' + senderName + '\n' +
-    '🏷️ Category: ' + catUpper + '\n' +
-    '📅 Time:     ' + formattedTime + '\n' +
-    (note.url ? ('🔗 Link:     ' + note.url + '\n') : '') +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    'Message:\n' + note.message + '\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-    '🔒 Security Note: Emailed directly to your Gmail. Your private Google Doc remains 100% untouched.';
-
-  var htmlBody = '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; color: #1a202c;">' +
-    '<div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #6366f1; padding-bottom: 12px; margin-bottom: 18px;">' +
-      '<h2 style="color: #4f46e5; margin: 0; font-size: 20px;">📬 QuickDrop Visitor Message</h2>' +
-      '<span style="background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600;">VISITOR DROP</span>' +
-    '</div>' +
-    '<table style="width: 100%; font-size: 13.5px; margin-bottom: 18px; border-collapse: collapse;">' +
-      '<tr><td style="padding: 6px 0; color: #64748b; width: 90px;"><strong>Sender:</strong></td><td style="padding: 6px 0; color: #0f172a; font-weight: 500;">' + escapeHtmlGas(senderName) + '</td></tr>' +
-      '<tr><td style="padding: 6px 0; color: #64748b;"><strong>Category:</strong></td><td style="padding: 6px 0; color: #0f172a;"><span style="background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-weight: 600;">' + escapeHtmlGas(catUpper) + '</span></td></tr>' +
-      '<tr><td style="padding: 6px 0; color: #64748b;"><strong>Time:</strong></td><td style="padding: 6px 0; color: #0f172a;">' + escapeHtmlGas(formattedTime) + '</td></tr>' +
-      (note.url ? ('<tr><td style="padding: 6px 0; color: #64748b;"><strong>Link:</strong></td><td style="padding: 6px 0;"><a href="' + escapeHtmlGas(note.url) + '" style="color: #4f46e5; word-break: break-all;">' + escapeHtmlGas(note.url) + '</a></td></tr>') : '') +
-    '</table>' +
-    '<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; padding: 16px; border-radius: 6px; font-size: 14.5px; color: #0f172a; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">' +
-      escapeHtmlGas(note.message || '(No message body)') +
-    '</div>' +
-    '<div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #f1f5f9; font-size: 11.5px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">' +
-      '<span>🔒 Zero Extra Apps Relay • Gmail Push Notification</span>' +
-      '<span>Google Doc Protected 🛡️</span>' +
-    '</div>' +
-  '</div>';
-
-  var emailOptions = {
-    to: recipient,
-    name: 'QuickDrop Visitor Relay',
-    subject: subject,
-    body: plainBody,
-    htmlBody: htmlBody
-  };
-
-  try {
-    MailApp.sendEmail(emailOptions);
-  } catch (mailErr) {
-    try {
-      GmailApp.sendEmail(recipient, subject, plainBody, {
-        name: 'QuickDrop Visitor Relay',
-        htmlBody: htmlBody
-      });
-    } catch (gmailErr) {
-      Logger.log('Visitor email dispatch failed: ' + gmailErr);
-      throw gmailErr;
-    }
-  }
-
-  return {
-    recipient: recipient,
-    timestamp: formattedTime
-  };
-}
-
-/**
- * Formats and appends a note entry into the Google Doc
- */
-function appendNoteToGoogleDoc(docId, note) {
+function appendNoteToGoogleDoc(docId, note, mode) {
+  var isOwner = (mode === 'owner');
   var doc = DocumentApp.openById(docId);
   var body = doc.getBody();
 
@@ -605,30 +565,61 @@ function appendNoteToGoogleDoc(docId, note) {
   else if (catUpper === 'URGENT') icon = '🚨';
   else if (catUpper === 'RESPONSE' || catUpper === 'REPLY') icon = '💬';
 
-  // Clean title: remove duplicate [CATEGORY] or icon if already prefixed by client
+  // Clean title: remove duplicate [CATEGORY], [PUBLIC VISITOR], or icons if already prefixed by client
   var cleanTitle = (note.title || 'Untitled Note').trim();
   if (cleanTitle.indexOf(icon) === 0) {
     cleanTitle = cleanTitle.substring(icon.length).trim();
+  }
+  if (cleanTitle.indexOf('👑') === 0) {
+    cleanTitle = cleanTitle.substring(1).trim();
+  }
+  if (cleanTitle.indexOf('📬') === 0) {
+    cleanTitle = cleanTitle.substring(1).trim();
   }
   var prefix = '[' + catUpper + ']';
   if (cleanTitle.toUpperCase().indexOf(prefix) === 0) {
     cleanTitle = cleanTitle.substring(prefix.length).trim();
   }
-  if (!cleanTitle) cleanTitle = 'QuickDrop Note';
+  if (cleanTitle.toUpperCase().indexOf('[PUBLIC VISITOR]') === 0) {
+    cleanTitle = cleanTitle.substring('[PUBLIC VISITOR]'.length).trim();
+  }
+  if (cleanTitle.toUpperCase().indexOf('[PUBLIC VISITOR MESSAGE]') === 0) {
+    cleanTitle = cleanTitle.substring('[PUBLIC VISITOR MESSAGE]'.length).trim();
+  }
+  if (cleanTitle.toUpperCase().indexOf('[OWNER NOTE]') === 0) {
+    cleanTitle = cleanTitle.substring('[OWNER NOTE]'.length).trim();
+  }
+  if (!cleanTitle) cleanTitle = isOwner ? 'QuickDrop Note' : 'Visitor Message';
 
   // 1. Horizontal separator line
   body.appendHorizontalRule();
 
-  // 2. Header Paragraph (Title)
-  var titleText = icon + ' [' + catUpper + '] ' + cleanTitle;
+  // 2. Header Paragraph (Title) - Distinct compartment styling
+  var titleText = '';
+  var titleColor = '';
+  if (isOwner) {
+    // Owner Compartment: 👑 icon + [CATEGORY] in Google Blue (#1a73e8)
+    titleText = '👑 ' + icon + ' [' + catUpper + '] ' + cleanTitle;
+    titleColor = '#1a73e8'; // Google Blue
+  } else {
+    // Visitor Compartment: 📬 [PUBLIC VISITOR MESSAGE] in distinct Amber/Red (#d93025)
+    titleText = '📬 [PUBLIC VISITOR MESSAGE] ' + cleanTitle;
+    titleColor = '#d93025'; // Distinct Amber/Red
+  }
+
   var titlePara = body.appendParagraph(titleText);
   titlePara.setHeading(DocumentApp.ParagraphHeading.HEADING2);
-  titlePara.setForegroundColor('#1a73e8'); // Google Blue accent
+  titlePara.setForegroundColor(titleColor);
   titlePara.setSpacingBefore(10);
   titlePara.setSpacingAfter(2);
 
-  // 3. Metadata Paragraph (Timestamp, Sender, Category)
-  var metaText = '📅 ' + formattedTime + '   •   👤 ' + (note.sender || 'QuickDrop Device');
+  // 3. Metadata Paragraph (Timestamp, Sender, Tag)
+  var metaText = '';
+  if (isOwner) {
+    metaText = '📅 ' + formattedTime + '   •   👤 ' + (note.sender || 'QuickDrop Device') + ' (Owner 👑)';
+  } else {
+    metaText = '📅 ' + formattedTime + '   •   👤 ' + (note.sender || 'Public Visitor') + ' [Visitor Inbox 📬]';
+  }
   var metaPara = body.appendParagraph(metaText);
   metaPara.setFontSize(9);
   metaPara.setForegroundColor('#5f6368'); // Neutral grey
@@ -643,8 +634,8 @@ function appendNoteToGoogleDoc(docId, note) {
     bodyPara.setForegroundColor('#202124'); // High-contrast text
     bodyPara.setSpacingAfter(4);
 
-    // Code formatting for snippets
-    if (note.category === 'code') {
+    // Code formatting for snippets (Owner mode)
+    if (isOwner && note.category === 'code') {
       bodyPara.setFontFamily('Consolas');
       bodyPara.setIndentStart(18);
       bodyPara.setIndentEnd(18);
@@ -659,7 +650,7 @@ function appendNoteToGoogleDoc(docId, note) {
     if (/^https?:\/\//i.test(cleanUrl)) {
       var linkPara = body.appendParagraph('🔗 Direct Link: ' + cleanUrl);
       linkPara.setFontSize(9.5);
-      linkPara.setForegroundColor('#1a73e8');
+      linkPara.setForegroundColor(isOwner ? '#1a73e8' : '#d93025');
       linkPara.setUnderline(true);
       linkPara.setSpacingAfter(6);
       try {
@@ -711,7 +702,7 @@ function getRecentNotesFromDoc(docId, limit) {
           entries.push({
             title: text,
             message: '',
-            sender: 'QuickDrop Device',
+            sender: 'QuickDrop',
             time: 'Recently',
             url: null
           });
@@ -721,10 +712,10 @@ function getRecentNotesFromDoc(docId, limit) {
         var parts = text.split(/[•·-]\s*👤/);
         if (parts.length > 1) {
           currentEntry.time = parts[0].replace(/📅\s*/, '').trim();
-          currentEntry.sender = parts[1] ? parts[1].trim() : 'QuickDrop Device';
+          currentEntry.sender = parts[1] ? parts[1].trim() : 'QuickDrop';
         } else {
           currentEntry.time = text.replace(/📅\s*/, '').trim();
-          currentEntry.sender = 'QuickDrop Device';
+          currentEntry.sender = 'QuickDrop';
         }
       } else if (text.indexOf('🔗 Direct Link: ') === 0) {
         if (!currentEntry) currentEntry = { title: '', message: '', sender: '', time: '', url: null };
@@ -744,19 +735,6 @@ function getRecentNotesFromDoc(docId, limit) {
 }
 
 /**
- * Helper to escape HTML characters in email bodies
- */
-function escapeHtmlGas(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/**
  * Helper to build JSON responses for Google Apps Script Web App
  */
 function createJsonResponse(data) {
@@ -766,15 +744,24 @@ function createJsonResponse(data) {
 }
 
 /**
- * Direct Test function — You can run this directly inside the Apps Script editor!
- * Select "testDirectAppend" in the toolbar dropdown and click "Run".
+ * Direct Test functions — You can run these directly inside the Apps Script editor!
  */
 function testDirectAppend() {
   var result = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
-    title: 'Apps Script Direct Verification',
-    message: 'Testing connection directly from Google Apps Script Editor with Owner PIN. Your QuickDrop Google Doc relay is operational and secure!',
+    title: 'Apps Script Direct Verification (Owner Vault)',
+    message: 'Testing Option 3A Single Doc Two-Compartment Vault directly from Google Apps Script Editor with Owner formatting.',
     sender: 'Apps Script Console',
     category: 'idea'
-  });
-  Logger.log('Success! Result: ' + JSON.stringify(result));
+  }, 'owner');
+  Logger.log('Success Owner Append! Result: ' + JSON.stringify(result));
+}
+
+function testVisitorDirectAppend() {
+  var result = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
+    title: 'Apps Script Direct Verification (Visitor Inbox)',
+    message: 'Testing Visitor Compartment directly from Google Apps Script Editor.',
+    sender: 'Apps Script Visitor Test',
+    category: 'note'
+  }, 'visitor');
+  Logger.log('Success Visitor Append! Result: ' + JSON.stringify(result));
 }
