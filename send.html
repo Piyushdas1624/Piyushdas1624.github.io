@@ -6,7 +6,7 @@
 
   <!-- Title & SEO -->
   <title>QuickDrop — Send Instant Note or Link to Piyush</title>
-  <meta name="description" content="Instant one-way message, idea, code, and link relay. Send a note from any random laptop or browser straight to Piyush's devices without logging in.">
+  <meta name="description" content="Instant one-way and two-way message, idea, code, and link relay. Send a note from any random laptop or browser straight to Piyush's devices without logging in.">
   <link rel="canonical" href="https://piyushdas1624.github.io/drop.html">
 
   <meta name="theme-color" content="#0a0a0f">
@@ -25,18 +25,21 @@
   <div class="bg-grain" aria-hidden="true"></div>
   <div class="bg-gradient" aria-hidden="true"></div>
 
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
   <!-- ── NAVIGATION ─────────────────────────────────────────────────── -->
   <nav class="nav scrolled" role="navigation" aria-label="Main navigation" id="main-nav">
     <div class="nav-inner">
-      <a href="index.html" class="nav-logo" aria-label="Back to portfolio">
+      <a href="index.html" class="nav-logo" aria-label="Piyush Das — home">
         Piyush<span>.</span>
       </a>
-      <div class="nav-links">
-        <a href="index.html#projects" class="nav-link">Projects</a>
-        <a href="articles.html" class="nav-link">Articles</a>
-        <a href="now.html" class="nav-link">/now</a>
-        <a href="drop.html" class="nav-link" style="color: var(--accent);">/drop</a>
-        <a href="https://github.com/Piyushdas1624" class="nav-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <div class="nav-links" role="list">
+        <a href="index.html#projects" class="nav-link" role="listitem">Projects</a>
+        <a href="articles.html" class="nav-link" role="listitem">Articles</a>
+        <a href="now.html" class="nav-link" role="listitem">/now</a>
+        <a href="drop.html" class="nav-link" role="listitem" aria-current="page" style="color: var(--accent);">/drop</a>
+        <a href="https://github.com/Piyushdas1624" class="nav-link" target="_blank" rel="noopener noreferrer" role="listitem">GitHub</a>
         <a href="resume.html" class="nav-cta">Resume</a>
       </div>
     </div>
@@ -61,28 +64,28 @@
           QuickDrop
         </h1>
         <p class="section-desc">
-          On a random laptop or in a hurry? Send ideas, pastebin links, code, or notes directly to Piyush's devices. Free, instant push notification, zero login required.
+          On a random laptop or in a hurry? Send ideas, pastebin links, code, or notes directly to Piyush's devices. Free, unlimited, zero login required.
         </p>
       </div>
 
       <!-- Navigation Tabs -->
-      <div class="drop-tabs reveal">
-        <button type="button" class="drop-tab active" id="tab-compose" onclick="switchDropTab('compose')">
+      <div class="drop-tabs reveal" role="tablist">
+        <button type="button" class="drop-tab active" id="tab-compose" role="tab" aria-selected="true" aria-controls="view-compose" onclick="switchDropTab('compose')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           Send Note
         </button>
-        <button type="button" class="drop-tab" id="tab-feed" onclick="switchDropTab('feed')">
+        <button type="button" class="drop-tab" id="tab-feed" role="tab" aria-selected="false" aria-controls="view-feed" onclick="switchDropTab('feed')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Live Feed &amp; Inbox
+          Live Feed &amp; Responses
         </button>
-        <button type="button" class="drop-tab" id="tab-setup" onclick="switchDropTab('setup')">
+        <button type="button" class="drop-tab" id="tab-setup" role="tab" aria-selected="false" aria-controls="view-setup" onclick="switchDropTab('setup')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Device Setup
         </button>
       </div>
 
       <!-- ── SECTION 1: COMPOSE NOTE ─────────────────────────────────── -->
-      <div id="view-compose">
+      <div id="view-compose" role="tabpanel" aria-labelledby="tab-compose">
 
         <!-- Delivery Receipt Alert (shown on successful send) -->
         <div id="receipt-card" class="receipt-card" role="status" aria-live="polite">
@@ -101,7 +104,11 @@
             </div>
             <div class="receipt-row">
               <span>Delivery Route:</span>
-              <span>Instant Push via ntfy.sh</span>
+              <span id="receipt-route">Instant Push via ntfy.sh</span>
+            </div>
+            <div class="receipt-row">
+              <span>Target Topic:</span>
+              <span id="receipt-topic">piyush-drop-1624</span>
             </div>
             <div class="receipt-row">
               <span>Timestamp:</span>
@@ -113,12 +120,18 @@
             </div>
           </div>
 
-          <div class="receipt-actions">
+          <!-- Sent Content Preview -->
+          <div id="receipt-preview" class="receipt-preview"></div>
+
+          <div class="receipt-actions" style="margin-top: var(--space-4);">
             <button type="button" class="btn btn-secondary" onclick="resetComposer()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
               Send another note
             </button>
             <button type="button" class="btn btn-secondary" onclick="copyReceipt()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
-              📋 Copy delivery receipt
+              📋 Copy receipt
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="switchDropTab('feed')" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+              📡 View Live Feed &amp; Responses
             </button>
           </div>
         </div>
@@ -133,7 +146,7 @@
               Relay Ready &bull; Instant Push Active
             </div>
             <span style="font-size: var(--text-xs); color: var(--text-tertiary); font-family: var(--font-mono);">
-              Target: <span id="display-topic" style="color: var(--text-accent);">piyush-drop-1624</span>
+              Channel: <span id="display-topic" style="color: var(--text-accent);">piyush-drop-1624</span>
             </span>
           </div>
 
@@ -226,7 +239,7 @@
               </button>
 
               <div style="font-size: var(--text-xs); color: var(--text-tertiary);">
-                🔒 Direct encrypted relay &bull; No limits
+                🔒 Direct encrypted relay &bull; Free &amp; Unlimited
               </div>
             </div>
           </form>
@@ -239,34 +252,42 @@
             How does this reach Piyush?
           </div>
           <p class="info-box-desc">
-            When you hit Send, this page broadcasts your note to Piyush's personal devices using an encrypted pub/sub channel on <code>ntfy.sh</code>. His phone and desktop receive an immediate push alert with sound, vibration, and a one-click copy button.
+            When you hit Send, this page broadcasts your note to Piyush's personal devices via pub/sub on <code>ntfy.sh</code>. His phone and desktop receive an immediate push alert with sound, vibration, a one-click copy button, and a direct reply action.
           </p>
         </div>
 
       </div>
 
       <!-- ── SECTION 2: LIVE FEED & INBOX ────────────────────────────── -->
-      <div id="view-feed" style="display:none;">
+      <div id="view-feed" role="tabpanel" aria-labelledby="tab-feed" style="display:none;">
         <div class="drop-card">
           <div class="drop-card-glow" aria-hidden="true"></div>
 
           <div class="receipt-header" style="margin-bottom: var(--space-4);">
             <div>
               <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--text-primary);">
-                📡 Live Device Feed
+                📡 Live Device Feed &amp; Responses
               </h2>
               <p style="font-size: var(--text-xs); color: var(--text-tertiary);">
-                Messages sent to topic <code id="feed-topic" style="color: var(--text-accent);">piyush-drop-1624</code> (cached for 12 hours)
+                Messages and two-way responses on channel <code id="feed-topic" style="color: var(--text-accent);">piyush-drop-1624</code>
               </p>
             </div>
             <div style="display: flex; gap: var(--space-2);">
               <button type="button" class="btn btn-secondary" onclick="requestBrowserNotifications()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
-                🔔 Push Notifications
+                🔔 Desktop Alerts
               </button>
               <button type="button" class="btn btn-secondary" onclick="fetchRecentDrops()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
                 🔄 Refresh
               </button>
             </div>
+          </div>
+
+          <!-- Quick Response Bar -->
+          <div class="quick-reply-bar">
+            <input type="text" id="quick-broadcast-input" class="quick-reply-input" placeholder="Type a quick note or reply to send to all devices..." onkeydown="if(event.key==='Enter')submitQuickBroadcast();" />
+            <button type="button" class="btn btn-secondary" onclick="submitQuickBroadcast()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+              Send
+            </button>
           </div>
 
           <div id="feed-container" class="feed-list">
@@ -278,7 +299,7 @@
       </div>
 
       <!-- ── SECTION 3: SETUP FOR PIYUSH ─────────────────────────────── -->
-      <div id="view-setup" style="display:none;">
+      <div id="view-setup" role="tabpanel" aria-labelledby="tab-setup" style="display:none;">
         <div class="drop-card">
           <div class="drop-card-glow" aria-hidden="true"></div>
 
@@ -286,7 +307,7 @@
             📱 How to Receive on Your Devices
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-6);">
-            Follow these steps once on your phone or PC to receive instant notifications whenever a note is dropped from anywhere.
+            Follow these steps once on your phone or PC to receive instant notifications whenever a note is dropped from any laptop.
           </p>
 
           <div class="info-box">
@@ -295,8 +316,8 @@
             </div>
             <p class="info-box-desc">
               1. Install the free, open-source <strong>ntfy</strong> app from Google Play or Apple App Store.<br>
-              2. Tap <strong>+</strong> (Subscribe) and enter topic name: <code style="color:var(--text-accent); font-weight:600;">piyush-drop-1624</code><br>
-              3. Done! Now whenever you drop a note from any random computer, your phone instantly buzzes with the message and a "Copy" button.
+              2. Tap <strong>+</strong> (Subscribe) and enter topic name: <code style="color:var(--text-accent); font-weight:600;" id="setup-topic-display">piyush-drop-1624</code><br>
+              3. Done! Now whenever you drop a note from any random computer, your phone instantly buzzes with the message, a "Copy" button, and a link to view responses.
             </p>
           </div>
 
@@ -305,7 +326,7 @@
               2. In Any Browser (Web Notifications)
             </div>
             <p class="info-box-desc">
-              Visit <a href="https://ntfy.sh/piyush-drop-1624" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">https://ntfy.sh/piyush-drop-1624</a> in Chrome/Brave/Edge and click <strong>Subscribe</strong>.
+              Visit <a id="setup-ntfy-link" href="https://ntfy.sh/piyush-drop-1624" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">https://ntfy.sh/piyush-drop-1624</a> in Chrome/Brave/Edge and click <strong>Subscribe</strong>.
             </p>
           </div>
 
@@ -316,18 +337,26 @@
             <p class="info-box-desc" style="margin-bottom: var(--space-3);">
               Drag this button to your bookmarks bar on any laptop. Clicking it grabs the current page's title and URL and opens QuickDrop ready to send!
             </p>
-            <a href="javascript:(function(){const u=location.href;const t=document.title;const s=window.getSelection().toString();window.open('https://piyushdas1624.github.io/drop.html?title='+encodeURIComponent(t)+'&link='+encodeURIComponent(u)+'&msg='+encodeURIComponent(s||u),'_blank');})();" class="bookmarklet-pill" onclick="alert('Drag this button to your browser bookmarks bar!'); return false;">
+            <a href="javascript:(function(){const u=location.href;const t=document.title;const s=window.getSelection().toString();window.open('https://piyushdas1624.github.io/drop.html?title='+encodeURIComponent(t)+'&link='+encodeURIComponent(u)+'&msg='+encodeURIComponent(s||u),'_blank');})();" class="bookmarklet-pill" onclick="showToast('Drag this button to your browser bookmarks bar!'); return false;">
               ⚡ Drop to Piyush
             </a>
           </div>
 
           <div class="info-box">
             <div class="info-box-title">
-              4. Optional: Custom Settings
+              4. Channel Configuration
             </div>
-            <div class="form-group" style="margin-top: var(--space-3);">
-              <label class="form-label" for="custom-topic-input">Custom ntfy topic name:</label>
-              <input type="text" id="custom-topic-input" class="form-input" placeholder="piyush-drop-1624" style="margin-bottom: var(--space-3);" />
+            <p class="info-box-desc" style="margin-bottom: var(--space-3);">
+              Customize your channel topic or generate an unguessable private topic key:
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="custom-topic-input">Channel topic name:</label>
+              <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
+                <input type="text" id="custom-topic-input" class="form-input" placeholder="piyush-drop-1624" />
+                <button type="button" class="btn btn-secondary" onclick="generatePrivateTopic()" style="white-space: nowrap; font-size: var(--text-xs); padding: 0 var(--space-3);">
+                  🎲 Generate Private
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label" for="custom-webhook-input">Optional Discord Webhook URL:</label>
@@ -370,15 +399,125 @@
     let selectedCategory = 'idea';
     let isMonospace = false;
     let eventSource = null;
+    let sharedAudioCtx = null;
+    let lastDeliveredData = null;
 
-    // Detect Device
+    // Toast Notification helper
+    function showToast(message, duration = 3200) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 250);
+      }, duration);
+    }
+
+    // Safe Clipboard Copy with fallback
+    async function safeCopy(text, successMsg = 'Copied to clipboard!') {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          showToast(successMsg);
+          return;
+        }
+      } catch (e) {}
+
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (successful) {
+          showToast(successMsg);
+          return;
+        }
+      } catch (err) {}
+
+      prompt('Copy manually (Ctrl+C):', text);
+    }
+
+    // Sanitize string for HTTP ByteString headers (0x20 - 0x7E)
+    function sanitizeHeader(str) {
+      return (str || '').replace(/[^\x20-\x7E]/g, '').replace(/[\r\n]+/g, ' ').trim();
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes || isNaN(bytes)) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function formatTime(epochSec) {
+      if (!epochSec) return 'Just now';
+      const d = new Date(epochSec * 1000);
+      const now = new Date();
+      const diffSec = Math.floor((now - d) / 1000);
+      if (diffSec < 60) return 'Just now';
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Audio chime using Web Audio API
+    function ensureAudioContext() {
+      try {
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === 'suspended') {
+          sharedAudioCtx.resume();
+        }
+      } catch (e) {}
+    }
+
+    function playDeliveryChime() {
+      try {
+        ensureAudioContext();
+        if (!sharedAudioCtx) return;
+        const osc = sharedAudioCtx.createOscillator();
+        const gain = sharedAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, sharedAudioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, sharedAudioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.12, sharedAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, sharedAudioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(sharedAudioCtx.destination);
+        osc.start();
+        osc.stop(sharedAudioCtx.currentTime + 0.36);
+      } catch (e) {}
+    }
+
+    // Detect Device Name
     function detectDeviceName() {
       const ua = navigator.userAgent;
-      let os = 'Unknown OS';
+      let os = 'Device';
       if (ua.indexOf('Win') !== -1) os = 'Windows PC';
       else if (ua.indexOf('Mac') !== -1) os = 'MacBook';
       else if (ua.indexOf('Linux') !== -1) os = 'Linux Box';
-      else if (ua.indexOf('Android') !== -1) os = 'Android Device';
+      else if (ua.indexOf('Android') !== -1) os = 'Android Phone';
       else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1) os = 'iOS Device';
 
       let browser = 'Browser';
@@ -388,26 +527,6 @@
       else if (ua.indexOf('Safari') !== -1 && ua.indexOf('Chrome') === -1) browser = 'Safari';
 
       return `${os} (${browser})`;
-    }
-
-    // Audio chime using Web Audio API
-    function playDeliveryChime() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.36);
-      } catch (e) {
-        // AudioContext not allowed or unsupported
-      }
     }
 
     // Category Selector
@@ -452,15 +571,18 @@
     // Paste from clipboard
     async function pasteClipboard() {
       try {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-          const textarea = document.getElementById('message-input');
-          textarea.value = (textarea.value ? textarea.value + '\n' : '') + text;
-          updateCounters();
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            const textarea = document.getElementById('message-input');
+            textarea.value = (textarea.value ? textarea.value + '\n' : '') + text;
+            updateCounters();
+            showToast('Pasted from clipboard!');
+            return;
+          }
         }
-      } catch (err) {
-        alert('Clipboard access denied by browser. Please paste with Ctrl+V.');
-      }
+      } catch (err) {}
+      showToast('Please paste manually using Ctrl+V');
     }
 
     function clearMessage() {
@@ -475,8 +597,15 @@
 
     // Switch Tabs
     function switchDropTab(tabName) {
-      document.querySelectorAll('.drop-tab').forEach(b => b.classList.remove('active'));
-      document.getElementById('tab-' + tabName).classList.add('active');
+      document.querySelectorAll('.drop-tab').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      const activeTab = document.getElementById('tab-' + tabName);
+      if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.setAttribute('aria-selected', 'true');
+      }
 
       document.getElementById('view-compose').style.display = tabName === 'compose' ? 'block' : 'none';
       document.getElementById('view-feed').style.display = tabName === 'feed' ? 'block' : 'none';
@@ -499,11 +628,20 @@
 
     // Copy delivery receipt
     function copyReceipt() {
-      const id = document.getElementById('receipt-id').textContent;
-      const time = document.getElementById('receipt-time').textContent;
-      const text = `QuickDrop Receipt ${id} - Delivered to Piyush at ${time}`;
-      navigator.clipboard.writeText(text);
-      alert('Delivery receipt copied to clipboard!');
+      if (!lastDeliveredData) {
+        showToast('No receipt to copy.');
+        return;
+      }
+      const text = `QuickDrop Receipt ${lastDeliveredData.id}\nTarget: ${lastDeliveredData.topic}\nTimestamp: ${lastDeliveredData.time}\nSender: ${lastDeliveredData.sender}\nTitle: ${lastDeliveredData.title}\n\n${lastDeliveredData.message}`;
+      safeCopy(text, 'Delivery receipt copied!');
+    }
+
+    // Generate private unguessable topic
+    function generatePrivateTopic() {
+      const rand = Math.random().toString(36).substring(2, 8);
+      const newTopic = `piyush-drop-${rand}`;
+      document.getElementById('custom-topic-input').value = newTopic;
+      showToast(`Generated: ${newTopic}`);
     }
 
     // Save custom settings
@@ -520,20 +658,36 @@
         localStorage.setItem('qd_webhook', webhookInput);
       }
 
+      updateTopicDisplays();
+      showToast('Settings saved to this browser!');
+    }
+
+    function updateTopicDisplays() {
       document.getElementById('display-topic').textContent = currentTopic;
       document.getElementById('feed-topic').textContent = currentTopic;
-      alert('Settings saved! Future drops on this browser will use your custom topic.');
+      document.getElementById('custom-topic-input').value = currentTopic;
+      document.getElementById('setup-topic-display').textContent = currentTopic;
+      document.getElementById('setup-ntfy-link').href = `https://ntfy.sh/${currentTopic}`;
+      document.getElementById('setup-ntfy-link').textContent = `https://ntfy.sh/${currentTopic}`;
     }
 
     // Handle Form Submit
     async function handleDropSubmit(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
+      ensureAudioContext();
 
-      const message = document.getElementById('message-input').value.trim();
-      if (!message) return;
+      const messageInput = document.getElementById('message-input');
+      const message = messageInput.value.trim();
+      if (!message) {
+        messageInput.focus();
+        showToast('Please type a message before sending.');
+        return;
+      }
 
-      const sender = document.getElementById('sender-input').value.trim() || detectDeviceName();
-      const title = document.getElementById('title-input').value.trim() || `[${selectedCategory.toUpperCase()}] from ${sender}`;
+      const senderInput = document.getElementById('sender-input');
+      const titleInput = document.getElementById('title-input');
+      const sender = senderInput.value.trim() || detectDeviceName();
+      const title = titleInput.value.trim() || `[${selectedCategory.toUpperCase()}] from ${sender}`;
 
       const submitBtn = document.getElementById('submit-btn');
       const btnText = document.getElementById('btn-text');
@@ -544,95 +698,241 @@
       btnLoader.style.display = 'inline-block';
 
       // Find any URL in message for one-click action
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const matchedUrls = message.match(urlRegex);
-      const firstUrl = matchedUrls ? matchedUrls[0] : null;
+      const urlRegex = /(https?:\/\/[^\s]+)/i;
+      const match = message.match(urlRegex);
+      const firstUrl = match ? match[0] : null;
 
       // Priority and tags based on category
-      let priority = '4'; // High
-      let tags = 'memo,satellite';
-      if (selectedCategory === 'idea') { tags = 'bulb,light_bulb'; priority = '4'; }
-      if (selectedCategory === 'link') { tags = 'link,globe_with_meridians'; priority = '4'; }
-      if (selectedCategory === 'code') { tags = 'computer,keyboard'; priority = '3'; }
-      if (selectedCategory === 'urgent') { tags = 'rotating_light,fire'; priority = '5'; }
-
-      // Build payload body
-      const fullBody = `From: ${sender}\nCategory: ${selectedCategory}\n\n${message}`;
-
-      const headers = {
-        'Title': title,
-        'Priority': priority,
-        'Tags': tags
-      };
-
-      if (firstUrl) {
-        headers['Click'] = firstUrl;
-        headers['Actions'] = `view, Open Link, ${firstUrl}; copy, Copy Text, ${message.slice(0, 300)}`;
-      } else {
-        headers['Actions'] = `copy, Copy Text, ${message.slice(0, 300)}`;
-      }
+      let priority = 4; // High
+      let tags = ['memo', 'satellite'];
+      if (selectedCategory === 'idea') { tags = ['bulb', 'light_bulb']; priority = 4; }
+      if (selectedCategory === 'link') { tags = ['link', 'globe_with_meridians']; priority = 4; }
+      if (selectedCategory === 'code') { tags = ['computer', 'keyboard']; priority = 3; }
+      if (selectedCategory === 'urgent') { tags = ['rotating_light', 'fire']; priority = 5; }
 
       try {
-        // Primary Channel: ntfy.sh
-        const ntfyPromise = fetch(`https://ntfy.sh/${currentTopic}`, {
-          method: 'POST',
-          body: fullBody,
-          headers: headers
-        });
+        let ntfyRes;
+        let routeDescription = 'Instant Push via ntfy.sh';
+
+        // Check message length:
+        // Standard ntfy message limit is ~4096 bytes.
+        // For messages > 3500 characters, upload as a text attachment via PUT.
+        if (message.length > 3500) {
+          routeDescription = 'Large Note Attachment via ntfy.sh';
+          const safeTitle = sanitizeHeader(`[${selectedCategory.toUpperCase()}] ${title}`);
+          const safeTags = tags.join(',');
+
+          ntfyRes = await fetch(`https://ntfy.sh/${currentTopic}`, {
+            method: 'PUT',
+            headers: {
+              'Filename': 'quickdrop-note.txt',
+              'Title': safeTitle || 'QuickDrop Note',
+              'Priority': String(priority),
+              'Tags': safeTags
+            },
+            body: `From: ${sender}\nCategory: ${selectedCategory}\nTitle: ${title}\n\n${message}`
+          });
+        } else {
+          // Standard JSON payload
+          const actions = [];
+          if (firstUrl) {
+            actions.push({ action: 'view', label: '🔗 Open Link', url: firstUrl });
+          }
+          actions.push({
+            action: 'copy',
+            label: '📋 Copy Text',
+            value: message.slice(0, 1000)
+          });
+          actions.push({
+            action: 'view',
+            label: '💬 View & Reply',
+            url: `https://piyushdas1624.github.io/drop.html#feed`
+          });
+
+          const jsonPayload = {
+            topic: currentTopic,
+            title: title,
+            message: `From: ${sender}\n\n${message}`,
+            priority: priority,
+            tags: tags,
+            actions: actions
+          };
+          if (firstUrl) {
+            jsonPayload.click = firstUrl;
+          }
+
+          ntfyRes = await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jsonPayload)
+          });
+        }
 
         // Optional Channel: Discord Webhook if configured
-        let discordPromise = Promise.resolve();
         if (customWebhook) {
           const discordPayload = {
             username: "QuickDrop Relay",
             avatar_url: "https://avatars.githubusercontent.com/u/92461717?v=4",
             embeds: [{
               title: title,
-              description: message,
+              description: message.length > 2000 ? message.slice(0, 1990) + '... (truncated)' : message,
               color: 0x6366f1,
               fields: [
                 { name: "Sender / Device", value: sender, inline: true },
                 { name: "Category", value: selectedCategory, inline: true }
               ],
-              footer: { text: "QuickDrop • Piyush Das" },
+              footer: { text: `QuickDrop • Channel: ${currentTopic}` },
               timestamp: new Date().toISOString()
             }]
           };
-          discordPromise = fetch(customWebhook, {
+          fetch(customWebhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(discordPayload)
           }).catch(err => console.warn('Discord webhook error:', err));
         }
 
-        const [ntfyRes] = await Promise.all([ntfyPromise, discordPromise]);
-
-        if (ntfyRes.ok) {
-          playDeliveryChime();
-
-          // Show Receipt Card
-          const receiptCard = document.getElementById('receipt-card');
-          const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
-          document.getElementById('receipt-id').textContent = receiptId;
-          document.getElementById('receipt-time').textContent = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
-          document.getElementById('receipt-sender').textContent = sender;
-
-          receiptCard.classList.add('visible');
-          receiptCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-          // Also save to sent history in localStorage
-          saveToLocalHistory({ id: receiptId, title, message, sender, time: Date.now(), category: selectedCategory });
-        } else {
-          throw new Error('Relay returned status ' + ntfyRes.status);
+        if (!ntfyRes.ok) {
+          throw new Error('Relay returned HTTP status ' + ntfyRes.status);
         }
+
+        playDeliveryChime();
+
+        // Generate receipt
+        const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
+        const timeStr = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
+
+        lastDeliveredData = {
+          id: receiptId,
+          topic: currentTopic,
+          title: title,
+          message: message,
+          sender: sender,
+          time: timeStr,
+          category: selectedCategory
+        };
+
+        // Populate and show Receipt Card
+        document.getElementById('receipt-id').textContent = receiptId;
+        document.getElementById('receipt-route').textContent = routeDescription;
+        document.getElementById('receipt-topic').textContent = currentTopic;
+        document.getElementById('receipt-time').textContent = timeStr;
+        document.getElementById('receipt-sender').textContent = sender;
+        document.getElementById('receipt-preview').textContent = `Subject: ${title}\n\n${message.slice(0, 400)}${message.length > 400 ? '...' : ''}`;
+
+        const receiptCard = document.getElementById('receipt-card');
+        receiptCard.classList.add('visible');
+        receiptCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Save to local history
+        saveToLocalHistory({ id: receiptId, title, message, sender, time: Date.now(), category: selectedCategory });
+
+        // Clear input to prevent accidental duplicate submission
+        messageInput.value = '';
+        titleInput.value = '';
+        updateCounters();
+        showToast('Delivered instantly to Piyush!');
+
       } catch (err) {
         console.error('Error dispatching drop:', err);
-        alert('Could not deliver directly via network. Storing note locally in browser queue.\n\nError: ' + err.message);
+        showToast('Network error: ' + err.message, 5000);
       } finally {
         submitBtn.disabled = false;
         btnText.style.display = 'inline-flex';
         btnLoader.style.display = 'none';
       }
+    }
+
+    // Submit Quick broadcast or response from the feed tab
+    async function submitQuickBroadcast() {
+      const input = document.getElementById('quick-broadcast-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      ensureAudioContext();
+      const sender = detectDeviceName();
+
+      try {
+        const res = await fetch('https://ntfy.sh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: currentTopic,
+            title: `💬 Response from ${sender}`,
+            message: text,
+            priority: 4,
+            tags: ['speech_balloon', 'leftwards_arrow_with_hook']
+          })
+        });
+
+        if (res.ok) {
+          input.value = '';
+          playDeliveryChime();
+          showToast('Response sent!');
+          setTimeout(fetchRecentDrops, 400);
+        } else {
+          showToast('Could not send response. Status: ' + res.status);
+        }
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    }
+
+    // Inline reply box for a feed card
+    function toggleFeedReplyBox(item, cardEl) {
+      let box = cardEl.querySelector('.feed-reply-box');
+      if (box) {
+        box.remove();
+        return;
+      }
+
+      box = document.createElement('div');
+      box.className = 'feed-reply-box';
+      box.innerHTML = `
+        <textarea class="feed-reply-textarea" placeholder="Type your reply to this note..."></textarea>
+        <div class="feed-reply-actions">
+          <button type="button" class="tool-btn cancel-btn">Cancel</button>
+          <button type="button" class="btn btn-secondary send-reply-btn" style="font-size: var(--text-xs); padding: var(--space-1) var(--space-3); border-color: var(--border-accent); color: var(--text-accent);">
+            Send Reply
+          </button>
+        </div>
+      `;
+
+      cardEl.appendChild(box);
+      const textarea = box.querySelector('.feed-reply-textarea');
+      textarea.focus();
+
+      box.querySelector('.cancel-btn').addEventListener('click', () => box.remove());
+      box.querySelector('.send-reply-btn').addEventListener('click', async () => {
+        const replyText = textarea.value.trim();
+        if (!replyText) return;
+
+        ensureAudioContext();
+        try {
+          const res = await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: currentTopic,
+              title: `↩️ Re: ${item.title || 'Note'}`,
+              message: `Reply from ${detectDeviceName()}:\n\n${replyText}`,
+              priority: 4,
+              tags: ['speech_balloon', 'leftwards_arrow_with_hook']
+            })
+          });
+
+          if (res.ok) {
+            playDeliveryChime();
+            showToast('Reply dispatched!');
+            box.remove();
+            setTimeout(fetchRecentDrops, 400);
+          } else {
+            showToast('Failed to send reply. Status: ' + res.status);
+          }
+        } catch (err) {
+          showToast('Error: ' + err.message);
+        }
+      });
     }
 
     // Local History helper
@@ -651,14 +951,14 @@
       feedContainer.innerHTML = '<div class="feed-empty">Fetching messages...</div>';
 
       try {
-        const res = await fetch(`https://ntfy.sh/${currentTopic}/json?poll=1`);
+        const res = await fetch(`https://ntfy.sh/${currentTopic}/json?poll=1&since=all`);
         if (!res.ok) throw new Error('Status ' + res.status);
 
         const text = await res.text();
         const lines = text.trim().split('\n').filter(Boolean);
 
         if (lines.length === 0) {
-          feedContainer.innerHTML = '<div class="feed-empty">No messages received yet. Send a note from the "Send Note" tab!</div>';
+          feedContainer.innerHTML = '<div class="feed-empty">No messages on this channel yet. Drop a note to test!</div>';
           return;
         }
 
@@ -673,43 +973,79 @@
         });
 
       } catch (err) {
-        feedContainer.innerHTML = `<div class="feed-empty" style="color:var(--color-warning);">Could not load live feed: ${err.message}</div>`;
+        feedContainer.innerHTML = `<div class="feed-empty" style="color:var(--color-warning);">Could not load live feed: ${escapeHtml(err.message)}</div>`;
       }
     }
 
-    // Render single feed item
+    // Render single feed item safely without inline onclick strings
     function renderFeedItem(item, container, prepend = false) {
       const div = document.createElement('div');
       div.className = 'feed-item';
 
-      const timeStr = item.time ? new Date(item.time * 1000).toLocaleTimeString() : 'Recent';
-      div.innerHTML = `
+      const timeFormatted = formatTime(item.time);
+      const fullDate = item.time ? new Date(item.time * 1000).toLocaleString() : '';
+
+      // Check for URLs
+      const urlRegex = /(https?:\/\/[^\s]+)/i;
+      const match = (item.message || '').match(urlRegex);
+      const embeddedUrl = match ? match[0] : null;
+
+      let html = `
         <div class="feed-item-header">
           <span class="feed-item-title">${escapeHtml(item.title || 'Note')}</span>
-          <span class="feed-item-time">${timeStr}</span>
+          <span class="feed-item-time" title="${escapeHtml(fullDate)}">${timeFormatted}</span>
         </div>
         <div class="feed-item-body">${escapeHtml(item.message || '')}</div>
-        <div style="margin-top: var(--space-2); display: flex; justify-content: flex-end;">
-          <button type="button" class="tool-btn" onclick="copyText(${JSON.stringify(item.message || '')})">
+      `;
+
+      // Render attachment pill if present
+      if (item.attachment && item.attachment.url) {
+        const fileName = item.attachment.name || 'attachment.txt';
+        const fileSize = formatFileSize(item.attachment.size);
+        html += `
+          <div>
+            <a href="${escapeHtml(item.attachment.url)}" target="_blank" rel="noopener noreferrer" class="feed-attachment">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              📎 ${escapeHtml(fileName)} ${fileSize ? `(${fileSize})` : ''}
+            </a>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="feed-actions">
+          <button type="button" class="tool-btn feed-copy-btn">
             📋 Copy
+          </button>
+          ${embeddedUrl ? `<a href="${escapeHtml(embeddedUrl)}" target="_blank" rel="noopener noreferrer" class="tool-btn" style="text-decoration:none;">🔗 Open Link</a>` : ''}
+          <button type="button" class="tool-btn feed-reply-btn" style="color: var(--text-accent);">
+            ↩️ Reply
           </button>
         </div>
       `;
+
+      div.innerHTML = html;
+
+      // Safe event listeners (NO inline onclick attribute execution)
+      const copyBtn = div.querySelector('.feed-copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          safeCopy(item.message || '', 'Note copied to clipboard!');
+        });
+      }
+
+      const replyBtn = div.querySelector('.feed-reply-btn');
+      if (replyBtn) {
+        replyBtn.addEventListener('click', () => {
+          toggleFeedReplyBox(item, div);
+        });
+      }
 
       if (prepend && container.firstChild) {
         container.insertBefore(div, container.firstChild);
       } else {
         container.appendChild(div);
       }
-    }
-
-    function copyText(str) {
-      navigator.clipboard.writeText(str);
-      alert('Copied to clipboard!');
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // Live Stream via SSE
@@ -743,15 +1079,15 @@
     // Request native browser notifications
     async function requestBrowserNotifications() {
       if (!('Notification' in window)) {
-        alert('Browser notifications not supported in this browser.');
+        showToast('Browser notifications not supported.');
         return;
       }
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
-        alert('Notifications enabled! You will see desktop alerts for new drops.');
+        showToast('Notifications enabled!');
         initLiveStream();
       } else {
-        alert('Notification permission: ' + perm);
+        showToast('Notification permission: ' + perm);
       }
     }
 
@@ -761,11 +1097,14 @@
       const senderInput = document.getElementById('sender-input');
       if (senderInput) senderInput.value = detectDeviceName();
 
-      // Set topic displays
-      document.getElementById('display-topic').textContent = currentTopic;
-      document.getElementById('feed-topic').textContent = currentTopic;
-      document.getElementById('custom-topic-input').value = currentTopic;
-      document.getElementById('custom-webhook-input').value = customWebhook;
+      // Query Parameter parsing
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('topic')) {
+        currentTopic = params.get('topic');
+        localStorage.setItem('qd_topic', currentTopic);
+      }
+
+      updateTopicDisplays();
 
       // Character count listener
       const msgInput = document.getElementById('message-input');
@@ -779,15 +1118,15 @@
         }
       });
 
-      // Query Parameter parsing (for bookmarklets or quick links)
-      const params = new URLSearchParams(window.location.search);
       if (params.has('msg')) {
         msgInput.value = params.get('msg');
         updateCounters();
       }
       if (params.has('link')) {
         const linkVal = params.get('link');
-        msgInput.value = (msgInput.value ? msgInput.value + '\n' : '') + linkVal;
+        if (!msgInput.value.includes(linkVal)) {
+          msgInput.value = (msgInput.value ? msgInput.value + '\n' : '') + linkVal;
+        }
         selectType('link');
         updateCounters();
       }
@@ -797,9 +1136,12 @@
       if (params.has('device')) {
         senderInput.value = params.get('device');
       }
-      if (params.has('topic')) {
-        currentTopic = params.get('topic');
-        document.getElementById('display-topic').textContent = currentTopic;
+
+      // Hash navigation (#feed or #setup)
+      if (window.location.hash === '#feed') {
+        switchDropTab('feed');
+      } else if (window.location.hash === '#setup') {
+        switchDropTab('setup');
       }
 
       // Auto-send parameter
