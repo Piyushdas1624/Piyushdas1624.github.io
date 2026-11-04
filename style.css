@@ -2323,3 +2323,175 @@ h1, h2, h3, h4, h5 {
   border-color: var(--accent);
 }
 
+/* --------------------------------------------------------------------------
+   QUICKDROP ACCESS CONTROL, OWNER MODE & FEED PRIVACY
+   -------------------------------------------------------------------------- */
+.mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.mode-indicator.owner {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: var(--text-accent);
+}
+
+.mode-indicator.owner:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: var(--accent);
+}
+
+.mode-indicator.visitor {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+
+.mode-indicator.visitor:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+/* Feed Lock Screen */
+.feed-lock-card {
+  text-align: center;
+  padding: var(--space-10) var(--space-6);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin: var(--space-4) 0;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.feed-lock-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto var(--space-4);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.feed-lock-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.feed-lock-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 440px;
+  margin: 0 auto var(--space-5);
+}
+
+.feed-lock-form {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.feed-pin-field {
+  flex: 1;
+  min-width: 180px;
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  font-size: var(--text-sm);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.feed-lock-tip {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: var(--space-4);
+  line-height: 1.5;
+}
+
+.feed-lock-tip code {
+  color: var(--text-accent);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Feed privacy toggle pill */
+.privacy-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.privacy-toggle-btn.private {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.privacy-toggle-btn.private:hover {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.privacy-toggle-btn.public {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--color-success);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.privacy-toggle-btn.public:hover {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+/* Password input wrapper */
+.input-with-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-action .form-input {
+  padding-right: 40px;
+}
+
+.input-action-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--duration-fast);
+}
+
+.input-action-btn:hover {
+  color: var(--text-primary);
+}
+
+

@@ -108,6 +108,10 @@
               <strong style="color: var(--color-success);">Delivered (HTTP 200 OK)</strong>
             </div>
             <div class="receipt-row">
+              <span>Access Authorization:</span>
+              <span id="receipt-auth-status">Checking...</span>
+            </div>
+            <div class="receipt-row">
               <span>Delivery Route:</span>
               <span id="receipt-route">Instant Push via ntfy.sh</span>
             </div>
@@ -156,6 +160,10 @@
             <div class="status-indicator">
               <span class="status-pulse" aria-hidden="true"></span>
               <span>Relay Ready &bull; Instant Push</span>
+            </div>
+            <div id="mode-pill" class="mode-indicator visitor" onclick="handleModePillClick()" title="Click to manage Owner PIN or switch modes">
+              <span id="mode-icon">👤</span>
+              <span id="mode-text">Public Visitor Mode</span>
             </div>
             <div id="doc-sync-pill" class="status-indicator" style="background: rgba(255, 255, 255, 0.04); font-size: 11px;">
               <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--color-warning); margin-right:4px;" id="doc-sync-dot"></span>
@@ -254,8 +262,8 @@
                 <span id="btn-loader" class="btn-spinner" style="display:none;" aria-hidden="true"></span>
               </button>
 
-              <div style="font-size: var(--text-xs); color: var(--text-tertiary);">
-                🔒 Direct encrypted relay &bull; Free &amp; Unlimited
+              <div id="form-security-subtext" style="font-size: var(--text-xs); color: var(--text-tertiary);">
+                🔒 Direct encrypted push to Piyush &bull; Private Google Doc Protected
               </div>
             </div>
           </form>
@@ -268,7 +276,7 @@
             How does this reach Piyush?
           </div>
           <p class="info-box-desc">
-            When you hit Send, this page broadcasts your note to Piyush's personal devices via pub/sub on <code>ntfy.sh</code>. His phone and desktop receive an immediate push alert with sound, vibration, a one-click copy button, and a direct reply action.
+            When you hit Send, this page broadcasts your note to Piyush's personal devices via pub/sub on <code>ntfy.sh</code>. His phone and desktop receive an immediate push alert with sound, vibration, a one-click copy button, and a direct reply action. When Piyush operates in Owner Mode with his Secret PIN, drops are also permanently synced to his private Google Doc.
           </p>
         </div>
 
@@ -281,34 +289,69 @@
 
           <div class="receipt-header" style="margin-bottom: var(--space-4);">
             <div>
-              <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--text-primary);">
-                📡 Live Device Feed &amp; Responses
-              </h2>
+              <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: 2px;">
+                <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--text-primary); margin: 0;">
+                  📡 Live Feed &amp; Responses
+                </h2>
+                <span id="feed-privacy-pill" class="badge" style="font-size: 10px;">Private</span>
+              </div>
               <p style="font-size: var(--text-xs); color: var(--text-tertiary);">
                 Messages and two-way responses on channel <code id="feed-topic" style="color: var(--text-accent);">piyush-drop-1624</code>
               </p>
             </div>
-            <div style="display: flex; gap: var(--space-2);">
-              <button type="button" class="btn btn-secondary" onclick="requestBrowserNotifications()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
-                🔔 Desktop Alerts
+            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary privacy-toggle-btn private" id="feed-privacy-btn" onclick="toggleFeedPrivacyMode()" title="Toggle between Private (locked to Owner PIN) and Public feed">
+                <span id="feed-privacy-icon">🔒</span>
+                <span id="feed-privacy-label">Feed: Private</span>
               </button>
-              <button type="button" class="btn btn-secondary" onclick="fetchRecentDrops()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
+              <button type="button" class="btn btn-secondary" onclick="requestBrowserNotifications()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
+                🔔 Alerts
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="refreshFeedIfAllowed()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3);">
                 🔄 Refresh
               </button>
             </div>
           </div>
 
-          <!-- Quick Response Bar -->
-          <div class="quick-reply-bar">
-            <input type="text" id="quick-broadcast-input" class="quick-reply-input" placeholder="Type a quick note or reply to send to all devices..." onkeydown="if(event.key==='Enter')submitQuickBroadcast();" />
-            <button type="button" class="btn btn-secondary" onclick="submitQuickBroadcast()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
-              Send
-            </button>
+          <!-- Private Feed Lock Screen (displayed when Feed is Private and user is in Visitor Mode) -->
+          <div id="feed-lock-screen" class="feed-lock-card" style="display: none;">
+            <div class="feed-lock-icon">🔒</div>
+            <h3 class="feed-lock-title">Feed is Set to Private</h3>
+            <p class="feed-lock-desc">
+              Piyush has locked this live stream to protect private notes, code snippets, and replies from public visitors.
+              Enter your Owner Secret PIN to unlock the live feed.
+            </p>
+            <div class="feed-lock-form">
+              <input type="password" id="feed-pin-input" class="form-input feed-pin-field" placeholder="Owner Secret PIN" autocomplete="current-password" onkeydown="if(event.key==='Enter')unlockFeedWithPin();" />
+              <button type="button" class="btn btn-secondary" onclick="unlockFeedWithPin()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+                🔓 Unlock Feed
+              </button>
+            </div>
+            <div id="feed-pin-error" style="color: var(--color-warning); font-size: var(--text-xs); margin-top: var(--space-2); display: none;"></div>
+            <p class="feed-lock-tip">
+              On your personal laptop? Bookmark <code>https://piyushdas1624.github.io/drop.html?key=YOUR_PIN</code> to unlock automatically every time.
+            </p>
+            <div style="margin-top: var(--space-4);">
+              <button type="button" class="btn btn-secondary" onclick="switchDropTab('compose')" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                ← Return to Send Note
+              </button>
+            </div>
           </div>
 
-          <div id="feed-container" class="feed-list">
-            <div class="feed-empty">
-              Connecting to live feed...
+          <!-- Unlocked Feed View -->
+          <div id="feed-unlocked-content">
+            <!-- Quick Response Bar -->
+            <div class="quick-reply-bar">
+              <input type="text" id="quick-broadcast-input" class="quick-reply-input" placeholder="Type a quick note or reply to send to all devices..." onkeydown="if(event.key==='Enter')submitQuickBroadcast();" />
+              <button type="button" class="btn btn-secondary" onclick="submitQuickBroadcast()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+                Send
+              </button>
+            </div>
+
+            <div id="feed-container" class="feed-list">
+              <div class="feed-empty">
+                Connecting to live feed...
+              </div>
             </div>
           </div>
         </div>
@@ -325,6 +368,64 @@
           <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-6);">
             Follow these steps once on your phone or PC to receive instant notifications whenever a note is dropped from any laptop.
           </p>
+
+          <!-- 0. Owner Access Control & Security PIN (Prevents Misuse & Protects Google Doc) -->
+          <div class="info-box" style="border-color: rgba(99, 102, 241, 0.45); background: rgba(99, 102, 241, 0.07);">
+            <div class="info-box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+              <span style="display: inline-flex; align-items: center; gap: var(--space-2);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Owner Security PIN &amp; Access Control
+              </span>
+              <span id="setup-mode-badge" class="badge">
+                Checking Mode...
+              </span>
+            </div>
+
+            <p class="info-box-desc" style="margin-top: var(--space-2); margin-bottom: var(--space-3);">
+              <strong>How this stops abuse &amp; protects your Google Doc:</strong> The Web App executes under your Google identity, but without a secret key, anyone finding the URL could write to your document.
+              By setting an <strong>Owner Secret PIN</strong>, the Apps Script validates incoming requests and rejects unauthorized writes with <strong>HTTP 401 Unauthorized</strong>. Public visitors can only buzz your phone via push notification, while only you can write to your Google Doc!
+            </p>
+
+            <div class="form-row" style="margin-bottom: var(--space-3);">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="custom-auth-key-input" style="font-weight: 500;">
+                  Owner Secret PIN / Access Key:
+                </label>
+                <div class="input-with-action">
+                  <input type="password" id="custom-auth-key-input" class="form-input" placeholder="e.g. piyush1624" autocomplete="current-password" />
+                  <button type="button" class="input-action-btn" onclick="togglePasswordVisibility('custom-auth-key-input', this)" title="Show/Hide PIN">👁️</button>
+                </div>
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                  Must match <code>OWNER_SECRET_KEY</code> in <code>google-apps-script.js</code> (default: <code>piyush1624</code>).
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="feed-privacy-select" style="font-weight: 500;">
+                  Live Feed Visibility Mode:
+                </label>
+                <select id="feed-privacy-select" class="form-input" style="cursor: pointer;" onchange="handleFeedPrivacySelectChange(this.value)">
+                  <option value="private">🔒 Private (Owner PIN Required to View Feed)</option>
+                  <option value="public">🌐 Public (Anyone who opens /drop can view feed)</option>
+                </select>
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                  Controls whether casual visitors can see live messages in the Feed tab.
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4);">
+              <button type="button" class="btn btn-secondary" onclick="saveCustomSettings()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+                💾 Save PIN &amp; Settings
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="copyOwnerBookmarkedLink()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                📋 Copy Private Bookmark Link (?key=...)
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="lockOwnerMode()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-3); color: var(--color-warning);">
+                🔒 Lock / Exit Owner Mode
+              </button>
+            </div>
+          </div>
 
           <div class="info-box">
             <div class="info-box-title">
@@ -408,6 +509,7 @@
               </div>
               <ul style="font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; margin: 0; padding-left: var(--space-4);">
                 <li><strong>Your Google Doc stays "Restricted":</strong> Only you (Piyush) can open or view the document. You never need to set it to public or share it.</li>
+                <li><strong>Protected by Secret Owner PIN:</strong> Even if someone learns the Web App URL, they cannot write to your doc without your secret PIN (HTTP 401 rejected).</li>
                 <li><strong>Runs under your identity ("Execute as: Me"):</strong> The Google Apps Script executes with your account permissions on Google's cloud. It writes directly to your private doc without opening it to anyone else.</li>
                 <li><strong>Blocked from AI Web Crawlers:</strong> Search engines, GPTBot, ClaudeBot, and public web scrapers cannot crawl, view, or scrape your private Google Doc.</li>
                 <li><strong>Write-Only Endpoint:</strong> QuickDrop only transmits new drop payloads into the document; it never exposes or reads back your document's contents.</li>
@@ -424,6 +526,7 @@
                 <li>Open <a href="https://script.google.com/home/start" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">script.google.com</a> (or <code>script.new</code>) and click <strong>+ New project</strong>.</li>
                 <li>Name the project <code>QuickDrop-Relay</code>.</li>
                 <li>Replace the code in <code>Code.gs</code> with the code from <a href="google-apps-script.js" target="_blank" style="color: var(--accent); text-decoration: underline;"><code>google-apps-script.js</code></a> (click the "Copy Apps Script Code" button above).</li>
+                <li>In <code>google-apps-script.js</code>, make sure <code>OWNER_SECRET_KEY</code> matches your Secret PIN (e.g. <code>piyush1624</code>).</li>
                 <li>Click <strong>Deploy &gt; New deployment</strong>. Click the gear ⚙️ icon &gt; select <strong>Web app</strong>.</li>
                 <li>Set <strong>Execute as:</strong> <code>Me (your Google email)</code> and <strong>Who has access:</strong> <code>Anyone</code>.</li>
                 <li>Click <strong>Deploy</strong>, authorize Google permissions, copy the <strong>Web app URL</strong>, and paste it in the box above!</li>
@@ -485,9 +588,14 @@
     const DEFAULT_TOPIC = 'piyush-drop-1624';
     const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
     const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit';
+    
+    // State variables
     let currentTopic = localStorage.getItem('qd_topic') || DEFAULT_TOPIC;
     let customWebhook = localStorage.getItem('qd_webhook') || '';
     let customGasUrl = localStorage.getItem('qd_gas_url') || '';
+    let currentAuthKey = localStorage.getItem('qd_auth_key') || '';
+    let feedPrivacy = localStorage.getItem('qd_feed_privacy') || 'private'; // 'private' (default) or 'public'
+    let isOwnerMode = Boolean(currentAuthKey && currentAuthKey.trim());
     let selectedCategory = 'idea';
     let isMonospace = false;
     let eventSource = null;
@@ -703,9 +811,14 @@
       document.getElementById('view-feed').style.display = tabName === 'feed' ? 'block' : 'none';
       document.getElementById('view-setup').style.display = tabName === 'setup' ? 'block' : 'none';
 
+      updateAuthStateUI();
+
       if (tabName === 'feed') {
-        fetchRecentDrops();
-        initLiveStream();
+        const canView = (feedPrivacy === 'public') || isOwnerMode;
+        if (canView) {
+          fetchRecentDrops();
+          initLiveStream();
+        }
       }
     }
 
@@ -724,7 +837,9 @@
         showToast('No receipt to copy.');
         return;
       }
-      const docInfo = customGasUrl ? '\nGoogle Doc Archive: Permanent (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s)' : '\nGoogle Doc Archive: None (ntfy 12h cache)';
+      const docInfo = lastDeliveredData.gdocs
+        ? '\nGoogle Doc Archive: Permanent (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s) [Authorized 👑]'
+        : '\nGoogle Doc Archive: None (Push alert only / Visitor Mode)';
       const text = `QuickDrop Receipt ${lastDeliveredData.id}\nTarget: ${lastDeliveredData.topic}${docInfo}\nTimestamp: ${lastDeliveredData.time}\nSender: ${lastDeliveredData.sender}\nTitle: ${lastDeliveredData.title}\n\n${lastDeliveredData.message}`;
       safeCopy(text, 'Delivery receipt copied!');
     }
@@ -750,22 +865,137 @@
       safeCopy('https://github.com/Piyushdas1624/Piyushdas1624.github.io/blob/main/google-apps-script.js', 'Link to google-apps-script.js copied!');
     }
 
-    // Test Google Doc sync connection
+    // Toggle password field visibility
+    function togglePasswordVisibility(inputId, btnEl) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btnEl.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btnEl.textContent = '👁️';
+      }
+    }
+
+    // Handle clicking the mode pill in composer
+    function handleModePillClick() {
+      switchDropTab('setup');
+      const authInput = document.getElementById('custom-auth-key-input');
+      if (authInput) {
+        authInput.focus();
+        showToast(isOwnerMode ? '👑 Owner Mode is Active. Manage your PIN and Privacy settings below.' : 'Enter your Owner Secret PIN here to unlock full Google Doc Sync.');
+      }
+    }
+
+    // Handle feed privacy change from select in Setup tab
+    function handleFeedPrivacySelectChange(val) {
+      feedPrivacy = val;
+      localStorage.setItem('qd_feed_privacy', val);
+      updateAuthStateUI();
+      showToast(val === 'public' ? '🌐 Live Feed set to Public (Visible to anyone)' : '🔒 Live Feed set to Private (Locked to Owner PIN)');
+    }
+
+    // Toggle Feed Privacy from the button in Feed Header
+    function toggleFeedPrivacyMode() {
+      if (!isOwnerMode && feedPrivacy === 'private') {
+        showToast('🔒 Please enter your Owner Secret PIN to unlock or change feed privacy.');
+        const pinInput = document.getElementById('feed-pin-input');
+        if (pinInput) pinInput.focus();
+        return;
+      }
+
+      feedPrivacy = (feedPrivacy === 'private') ? 'public' : 'private';
+      localStorage.setItem('qd_feed_privacy', feedPrivacy);
+      updateAuthStateUI();
+
+      if (feedPrivacy === 'public') {
+        showToast('🌐 Feed is now Public! Anyone on this device can view.');
+        fetchRecentDrops();
+        initLiveStream();
+      } else {
+        showToast('🔒 Feed is now Private! PIN required for unauthorized visitors.');
+      }
+    }
+
+    // Unlock Feed with PIN from the Feed Lock Screen
+    function unlockFeedWithPin() {
+      const pinInput = document.getElementById('feed-pin-input');
+      const errEl = document.getElementById('feed-pin-error');
+      const val = pinInput ? pinInput.value.trim() : '';
+
+      if (!val) {
+        if (errEl) {
+          errEl.textContent = 'Please enter your Owner Secret PIN.';
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+
+      currentAuthKey = val;
+      localStorage.setItem('qd_auth_key', val);
+      isOwnerMode = true;
+
+      if (errEl) errEl.style.display = 'none';
+      if (pinInput) pinInput.value = '';
+
+      updateAuthStateUI();
+      fetchRecentDrops();
+      initLiveStream();
+      playDeliveryChime();
+      showToast('👑 Owner Mode Unlocked! Welcome back, Piyush.');
+    }
+
+    // Lock / Exit Owner Mode (clears secret key on public computers)
+    function lockOwnerMode() {
+      currentAuthKey = '';
+      localStorage.removeItem('qd_auth_key');
+      isOwnerMode = false;
+      const authInput = document.getElementById('custom-auth-key-input');
+      if (authInput) authInput.value = '';
+      updateAuthStateUI();
+      showToast('🔒 Owner Mode Locked. Device set to Public Visitor Mode.');
+    }
+
+    // Copy private bookmark link with embedded ?key=
+    function copyOwnerBookmarkedLink() {
+      const pin = currentAuthKey || (document.getElementById('custom-auth-key-input') ? document.getElementById('custom-auth-key-input').value.trim() : '');
+      if (!pin) {
+        showToast('Please enter an Owner Secret PIN first.');
+        const authInput = document.getElementById('custom-auth-key-input');
+        if (authInput) authInput.focus();
+        return;
+      }
+      const bookmarkUrl = `${window.location.origin}${window.location.pathname}?key=${encodeURIComponent(pin)}`;
+      safeCopy(bookmarkUrl, 'Private Owner URL copied! Bookmark this link on your personal devices.');
+    }
+
+    // Test Google Doc sync connection with secret PIN validation
     async function testGoogleDocSync() {
       const gasInput = document.getElementById('custom-gas-input');
+      const authInput = document.getElementById('custom-auth-key-input');
       const testUrl = (gasInput ? gasInput.value.trim() : '') || customGasUrl;
+      const testKey = (authInput ? authInput.value.trim() : '') || currentAuthKey;
+
       if (!testUrl) {
         showToast('Please enter your Google Apps Script Web App URL first.');
         if (gasInput) gasInput.focus();
         return;
       }
 
-      showToast('Sending test ping to Google Doc...');
+      if (!testKey) {
+        showToast('⚠️ Owner Secret PIN is empty! Please enter your PIN above.');
+        if (authInput) authInput.focus();
+        return;
+      }
+
+      showToast('Verifying connection & Owner PIN with Google Doc...');
       try {
         const testPayload = {
           action: 'test_connection',
+          authKey: testKey,
           title: 'QuickDrop Connection Verification',
-          message: 'QuickDrop successfully connected to your Google Doc! Notes dropped from any browser will now be permanently preserved here.',
+          message: 'QuickDrop successfully connected to your Google Doc with verified Owner PIN! Notes dropped from authorized browsers will be permanently preserved here.',
           sender: detectDeviceName() + ' (Verification Test)',
           category: 'idea',
           docId: DEFAULT_DOC_ID,
@@ -783,9 +1013,13 @@
           });
           if (res.ok) {
             const data = await res.json();
+            if (data.status === 'unauthorized') {
+              showToast('❌ Auth Failed: ' + data.message, 6000);
+              return;
+            }
             verified = true;
             playDeliveryChime();
-            showToast('✓ Verified! Test entry saved to Google Doc.');
+            showToast('✓ Verified! Google Doc write authorized with your Secret PIN.');
             return;
           }
         } catch (corsErr) {
@@ -801,7 +1035,7 @@
             body: JSON.stringify(testPayload)
           });
           playDeliveryChime();
-          showToast('Test signal dispatched to Google Doc!');
+          showToast('Test signal dispatched to Google Doc with Owner PIN!');
         }
       } catch (err) {
         console.error('Test error:', err);
@@ -822,6 +1056,8 @@
       const topicInput = document.getElementById('custom-topic-input').value.trim();
       const webhookInput = document.getElementById('custom-webhook-input').value.trim();
       const gasInput = document.getElementById('custom-gas-input') ? document.getElementById('custom-gas-input').value.trim() : '';
+      const authInput = document.getElementById('custom-auth-key-input') ? document.getElementById('custom-auth-key-input').value.trim() : '';
+      const privacySelect = document.getElementById('feed-privacy-select') ? document.getElementById('feed-privacy-select').value : null;
 
       if (topicInput) {
         currentTopic = topicInput;
@@ -835,9 +1071,19 @@
         customGasUrl = gasInput;
         localStorage.setItem('qd_gas_url', gasInput);
       }
+      if (authInput !== undefined) {
+        currentAuthKey = authInput;
+        localStorage.setItem('qd_auth_key', authInput);
+        isOwnerMode = Boolean(authInput && authInput.trim());
+      }
+      if (privacySelect) {
+        feedPrivacy = privacySelect;
+        localStorage.setItem('qd_feed_privacy', privacySelect);
+      }
 
+      updateAuthStateUI();
       updateTopicDisplays();
-      showToast('Settings saved to this browser!');
+      showToast(isOwnerMode ? '👑 Settings saved! Owner Mode Active.' : 'Settings saved to this browser.');
     }
 
     function updateTopicDisplays() {
@@ -861,16 +1107,27 @@
         gasInput.value = customGasUrl;
       }
 
-      if (customGasUrl) {
+      if (customGasUrl && isOwnerMode) {
         if (docSyncDot) docSyncDot.style.background = 'var(--color-success)';
-        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-success); font-weight:600;">Active</span>';
+        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-success); font-weight:600;">Active 👑</span>';
         if (docSyncPill) docSyncPill.title = 'Every note will be permanently appended to your Google Doc.';
         if (setupStatusBadge) {
           setupStatusBadge.className = 'badge';
           setupStatusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
           setupStatusBadge.style.color = 'var(--color-success)';
           setupStatusBadge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-          setupStatusBadge.innerHTML = '✓ Connected to Google Doc (1EgAUJU...)';
+          setupStatusBadge.innerHTML = '✓ Connected &amp; Authorized (1EgAUJU...)';
+        }
+      } else if (customGasUrl && !isOwnerMode) {
+        if (docSyncDot) docSyncDot.style.background = 'var(--color-warning)';
+        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-warning);">Owner PIN Required 🔒</span>';
+        if (docSyncPill) docSyncPill.title = 'Public visitor mode: Google Doc write disabled to prevent spam.';
+        if (setupStatusBadge) {
+          setupStatusBadge.className = 'badge';
+          setupStatusBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+          setupStatusBadge.style.color = 'var(--color-warning)';
+          setupStatusBadge.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+          setupStatusBadge.innerHTML = '⚠️ URL Configured, Owner PIN Required';
         }
       } else {
         if (docSyncDot) docSyncDot.style.background = 'var(--color-warning)';
@@ -882,6 +1139,124 @@
           setupStatusBadge.style.color = 'var(--color-warning)';
           setupStatusBadge.style.border = '1px solid rgba(251, 191, 36, 0.3)';
           setupStatusBadge.innerHTML = '⚠️ Not Configured (12h Ntfy Cache Only)';
+        }
+      }
+    }
+
+    // Refresh auth state, pills, badges, and view permissions across all tabs
+    function updateAuthStateUI() {
+      // 1. Update Mode Pill in Composer
+      const modePill = document.getElementById('mode-pill');
+      const modeIcon = document.getElementById('mode-icon');
+      const modeText = document.getElementById('mode-text');
+      if (modePill && modeIcon && modeText) {
+        if (isOwnerMode) {
+          modePill.className = 'mode-indicator owner';
+          modeIcon.textContent = '👑';
+          modeText.textContent = 'Owner Mode Active';
+          modePill.title = 'Authenticated with Owner Secret PIN. Google Doc sync enabled. Click to manage.';
+        } else {
+          modePill.className = 'mode-indicator visitor';
+          modeIcon.textContent = '👤';
+          modeText.textContent = 'Public Visitor Mode';
+          modePill.title = 'No Owner PIN set. Notes trigger phone alerts only. Click to enter Owner PIN.';
+        }
+      }
+
+      // 2. Update Submit Button & Security Subtext
+      const btnText = document.getElementById('btn-text');
+      const formSecuritySubtext = document.getElementById('form-security-subtext');
+      if (btnText) {
+        if (isOwnerMode) {
+          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send &amp; Sync to Doc 👑`;
+        } else {
+          btnText.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Send to Piyush's Devices`;
+        }
+      }
+      if (formSecuritySubtext) {
+        if (isOwnerMode) {
+          formSecuritySubtext.innerHTML = '🔒 Owner Mode Active &bull; Instant Push + Permanent Google Doc Sync';
+        } else {
+          formSecuritySubtext.innerHTML = '🔒 Public Visitor Mode &bull; Push Notification to Piyush &bull; Private Doc Protected';
+        }
+      }
+
+      // 3. Update Doc Sync Pill
+      updateDocSyncStatus();
+
+      // 4. Update Feed Privacy Pill & Controls
+      const feedPrivacyPill = document.getElementById('feed-privacy-pill');
+      const feedPrivacyBtn = document.getElementById('feed-privacy-btn');
+      const feedPrivacyIcon = document.getElementById('feed-privacy-icon');
+      const feedPrivacyLabel = document.getElementById('feed-privacy-label');
+      const feedLockScreen = document.getElementById('feed-lock-screen');
+      const feedUnlockedContent = document.getElementById('feed-unlocked-content');
+
+      if (feedPrivacy === 'private') {
+        if (feedPrivacyPill) {
+          feedPrivacyPill.className = 'badge';
+          feedPrivacyPill.style.background = isOwnerMode ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)';
+          feedPrivacyPill.style.color = isOwnerMode ? 'var(--text-accent)' : 'var(--color-warning)';
+          feedPrivacyPill.style.border = isOwnerMode ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)';
+          feedPrivacyPill.textContent = isOwnerMode ? '🔒 Private (Unlocked for Owner 👑)' : '🔒 Private (Locked)';
+        }
+        if (feedPrivacyBtn && feedPrivacyIcon && feedPrivacyLabel) {
+          feedPrivacyBtn.className = 'btn btn-secondary privacy-toggle-btn private';
+          feedPrivacyIcon.textContent = '🔒';
+          feedPrivacyLabel.textContent = 'Feed: Private';
+        }
+      } else {
+        if (feedPrivacyPill) {
+          feedPrivacyPill.className = 'badge';
+          feedPrivacyPill.style.background = 'rgba(16, 185, 129, 0.15)';
+          feedPrivacyPill.style.color = 'var(--color-success)';
+          feedPrivacyPill.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          feedPrivacyPill.textContent = '🌐 Public Feed';
+        }
+        if (feedPrivacyBtn && feedPrivacyIcon && feedPrivacyLabel) {
+          feedPrivacyBtn.className = 'btn btn-secondary privacy-toggle-btn public';
+          feedPrivacyIcon.textContent = '🌐';
+          feedPrivacyLabel.textContent = 'Feed: Public';
+        }
+      }
+
+      // Check whether current user can view live feed
+      const canViewFeed = (feedPrivacy === 'public') || isOwnerMode;
+      if (feedLockScreen && feedUnlockedContent) {
+        if (canViewFeed) {
+          feedLockScreen.style.display = 'none';
+          feedUnlockedContent.style.display = 'block';
+        } else {
+          feedLockScreen.style.display = 'block';
+          feedUnlockedContent.style.display = 'none';
+        }
+      }
+
+      // 5. Update Setup Tab Badges & Inputs
+      const setupModeBadge = document.getElementById('setup-mode-badge');
+      const authKeyInput = document.getElementById('custom-auth-key-input');
+      const privacySelect = document.getElementById('feed-privacy-select');
+
+      if (authKeyInput && currentAuthKey && !authKeyInput.value) {
+        authKeyInput.value = currentAuthKey;
+      }
+      if (privacySelect) {
+        privacySelect.value = feedPrivacy;
+      }
+
+      if (setupModeBadge) {
+        if (isOwnerMode) {
+          setupModeBadge.className = 'badge';
+          setupModeBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+          setupModeBadge.style.color = 'var(--color-success)';
+          setupModeBadge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          setupModeBadge.innerHTML = '👑 Owner Mode Active';
+        } else {
+          setupModeBadge.className = 'badge';
+          setupModeBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+          setupModeBadge.style.color = 'var(--color-warning)';
+          setupModeBadge.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+          setupModeBadge.innerHTML = '🔒 Visitor Mode (Locked)';
         }
       }
     }
@@ -902,7 +1277,10 @@
       const senderInput = document.getElementById('sender-input');
       const titleInput = document.getElementById('title-input');
       const sender = senderInput.value.trim() || detectDeviceName();
-      const title = titleInput.value.trim() || `[${selectedCategory.toUpperCase()}] from ${sender}`;
+      
+      // Public visitors get a clear [PUBLIC VISITOR] prefix to distinguish from Piyush
+      let baseTitle = titleInput.value.trim() || `[${selectedCategory.toUpperCase()}] from ${sender}`;
+      let title = isOwnerMode ? baseTitle : `[PUBLIC VISITOR] ${baseTitle}`;
 
       const submitBtn = document.getElementById('submit-btn');
       const btnText = document.getElementById('btn-text');
@@ -917,25 +1295,27 @@
       const match = message.match(urlRegex);
       const firstUrl = match ? match[0] : null;
 
-      // Priority and tags based on category
+      // Priority and tags based on category & owner mode
       let priority = 4; // High
-      let tags = ['memo', 'satellite'];
-      if (selectedCategory === 'idea') { tags = ['bulb', 'light_bulb']; priority = 4; }
-      if (selectedCategory === 'link') { tags = ['link', 'globe_with_meridians']; priority = 4; }
-      if (selectedCategory === 'code') { tags = ['computer', 'keyboard']; priority = 3; }
-      if (selectedCategory === 'urgent') { tags = ['rotating_light', 'fire']; priority = 5; }
+      let tags = isOwnerMode ? ['memo', 'crown'] : ['envelope', 'speaking_head'];
+      if (selectedCategory === 'idea') { tags.push('bulb', 'light_bulb'); priority = 4; }
+      if (selectedCategory === 'link') { tags.push('link', 'globe_with_meridians'); priority = 4; }
+      if (selectedCategory === 'code') { tags.push('computer', 'keyboard'); priority = 3; }
+      if (selectedCategory === 'urgent') { tags.push('rotating_light', 'fire'); priority = 5; }
 
       try {
         let ntfyRes;
         let routeDescription = 'Instant Push via ntfy.sh';
 
-        // ── Permanent Archive to Google Docs via Google Apps Script (Concurrent Dispatch) ────
+        // ── Permanent Archive to Google Docs via Google Apps Script ────
+        // SECURITY GATE: ONLY dispatch to Google Doc if in Owner Mode with Secret PIN!
         let gdocsAppended = false;
         let gasPromise = null;
-        if (customGasUrl) {
+        if (customGasUrl && isOwnerMode && currentAuthKey) {
           try {
             const gasPayload = {
-              title: title,
+              authKey: currentAuthKey,
+              title: baseTitle,
               message: message,
               sender: sender,
               category: selectedCategory,
@@ -961,12 +1341,14 @@
           }
         }
 
-        // Check message length:
+        // Check message length for ntfy:
         // Standard ntfy message limit is ~4096 bytes.
         // For messages > 3500 characters, upload as a text attachment via PUT.
+        const bodyContent = isOwnerMode ? `From: ${sender}\n\n${message}` : `[PUBLIC VISITOR DROP]\nFrom: ${sender}\n\n${message}`;
+
         if (message.length > 3500) {
           routeDescription = 'Large Note Attachment via ntfy.sh';
-          const safeTitle = sanitizeHeader(`[${selectedCategory.toUpperCase()}] ${title}`);
+          const safeTitle = sanitizeHeader(title);
           const safeTags = tags.join(',');
 
           ntfyRes = await fetch(`https://ntfy.sh/${currentTopic}`, {
@@ -999,7 +1381,7 @@
           const jsonPayload = {
             topic: currentTopic,
             title: title,
-            message: `From: ${sender}\n\n${message}`,
+            message: bodyContent,
             priority: priority,
             tags: tags,
             actions: actions
@@ -1028,10 +1410,11 @@
             embeds: [{
               title: title,
               description: message.length > 2000 ? message.slice(0, 1990) + '... (truncated)' : message,
-              color: 0x6366f1,
+              color: isOwnerMode ? 0x6366f1 : 0x10b981,
               fields: [
                 { name: "Sender / Device", value: sender, inline: true },
-                { name: "Category", value: selectedCategory, inline: true }
+                { name: "Category", value: selectedCategory, inline: true },
+                { name: "Mode", value: isOwnerMode ? "Owner (PIN Verified 👑)" : "Public Visitor", inline: true }
               ],
               footer: { text: `QuickDrop • Channel: ${currentTopic}` },
               timestamp: new Date().toISOString()
@@ -1050,8 +1433,8 @@
 
         playDeliveryChime();
 
-        if (customGasUrl) {
-          routeDescription = 'Dual-Dispatch: Instant Push (ntfy.sh) + Permanent Doc Archive (Google Docs)';
+        if (customGasUrl && isOwnerMode) {
+          routeDescription = 'Dual-Dispatch: Instant Push (ntfy.sh) + Permanent Google Doc Archive (Owner Verified 👑)';
         }
 
         // Generate receipt
@@ -1066,7 +1449,8 @@
           sender: sender,
           time: timeStr,
           category: selectedCategory,
-          gdocs: gdocsAppended
+          gdocs: gdocsAppended,
+          isOwner: isOwnerMode
         };
 
         // Populate and show Receipt Card
@@ -1076,12 +1460,24 @@
         document.getElementById('receipt-time').textContent = timeStr;
         document.getElementById('receipt-sender').textContent = sender;
 
+        const receiptAuthStatus = document.getElementById('receipt-auth-status');
+        if (receiptAuthStatus) {
+          if (isOwnerMode) {
+            receiptAuthStatus.innerHTML = '<strong style="color: var(--text-accent);">👑 Owner Verified (Secret PIN Accepted)</strong>';
+          } else {
+            receiptAuthStatus.innerHTML = '<span style="color: var(--text-tertiary);">👤 Public Visitor Mode (No Doc Access)</span>';
+          }
+        }
+
         const receiptDocStatus = document.getElementById('receipt-doc-status');
         const receiptDocLink = document.getElementById('receipt-doc-link');
         if (receiptDocStatus) {
-          if (customGasUrl) {
-            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc</strong>';
+          if (isOwnerMode && customGasUrl) {
+            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc (Authorized 👑)</strong>';
             if (receiptDocLink) receiptDocLink.style.display = 'inline-flex';
+          } else if (!isOwnerMode) {
+            receiptDocStatus.innerHTML = '<span style="color: var(--text-tertiary);">🔒 Skipped (Public Visitor Mode — Owner Secret PIN required)</span>';
+            if (receiptDocLink) receiptDocLink.style.display = 'none';
           } else {
             receiptDocStatus.innerHTML = '<span style="color: var(--color-warning);">⚠️ 12h Temporary Cache Only (<a href="#setup" onclick="switchDropTab(\'setup\')" style="color: var(--text-accent); text-decoration: underline;">Connect Google Doc</a>)</span>';
             if (receiptDocLink) receiptDocLink.style.display = 'none';
@@ -1101,7 +1497,12 @@
         messageInput.value = '';
         titleInput.value = '';
         updateCounters();
-        showToast(customGasUrl ? 'Delivered to phone & saved to Google Doc!' : 'Delivered instantly to Piyush!');
+
+        if (isOwnerMode && customGasUrl) {
+          showToast('👑 Delivered to phone & permanently saved to Google Doc!');
+        } else {
+          showToast('Delivered instantly to Piyush\'s phone!');
+        }
 
       } catch (err) {
         console.error('Error dispatching drop:', err);
@@ -1123,15 +1524,16 @@
       const sender = detectDeviceName();
 
       try {
+        const title = isOwnerMode ? `💬 [OWNER REPLY] ${sender}` : `💬 [VISITOR REPLY] ${sender}`;
         const res = await fetch('https://ntfy.sh', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: currentTopic,
-            title: `💬 Response from ${sender}`,
+            title: title,
             message: text,
             priority: 4,
-            tags: ['speech_balloon', 'leftwards_arrow_with_hook']
+            tags: isOwnerMode ? ['speech_balloon', 'crown'] : ['speech_balloon', 'leftwards_arrow_with_hook']
           })
         });
 
@@ -1139,14 +1541,15 @@
           input.value = '';
           playDeliveryChime();
 
-          if (customGasUrl) {
+          if (customGasUrl && isOwnerMode && currentAuthKey) {
             fetch(customGasUrl, {
               method: 'POST',
               mode: 'no-cors',
               redirect: 'follow',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify({
-                title: `💬 Response from ${sender}`,
+                authKey: currentAuthKey,
+                title: title,
                 message: text,
                 sender: sender,
                 category: 'reply',
@@ -1198,29 +1601,31 @@
 
         ensureAudioContext();
         try {
+          const title = isOwnerMode ? `↩️ [OWNER] Re: ${item.title || 'Note'}` : `↩️ Re: ${item.title || 'Note'}`;
           const res = await fetch('https://ntfy.sh', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               topic: currentTopic,
-              title: `↩️ Re: ${item.title || 'Note'}`,
+              title: title,
               message: `Reply from ${detectDeviceName()}:\n\n${replyText}`,
               priority: 4,
-              tags: ['speech_balloon', 'leftwards_arrow_with_hook']
+              tags: isOwnerMode ? ['speech_balloon', 'crown'] : ['speech_balloon', 'leftwards_arrow_with_hook']
             })
           });
 
           if (res.ok) {
             playDeliveryChime();
 
-            if (customGasUrl) {
+            if (customGasUrl && isOwnerMode && currentAuthKey) {
               fetch(customGasUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 redirect: 'follow',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
-                  title: `↩️ Re: ${item.title || 'Note'}`,
+                  authKey: currentAuthKey,
+                  title: title,
                   message: replyText,
                   sender: detectDeviceName(),
                   category: 'reply',
@@ -1253,9 +1658,20 @@
       } catch (e) {}
     }
 
+    // Refresh feed if permissions allow
+    function refreshFeedIfAllowed() {
+      const canView = (feedPrivacy === 'public') || isOwnerMode;
+      if (canView) {
+        fetchRecentDrops();
+      } else {
+        showToast('🔒 Feed is private. Enter your Owner PIN below.');
+      }
+    }
+
     // Fetch Recent Drops for Live Feed
     async function fetchRecentDrops() {
       const feedContainer = document.getElementById('feed-container');
+      if (!feedContainer) return;
       feedContainer.innerHTML = '<div class="feed-empty">Fetching messages...</div>';
 
       try {
@@ -1367,9 +1783,11 @@
             if (data.event === 'message') {
               playDeliveryChime();
               const container = document.getElementById('feed-container');
-              const empty = container.querySelector('.feed-empty');
-              if (empty) empty.remove();
-              renderFeedItem(data, container, true);
+              if (container) {
+                const empty = container.querySelector('.feed-empty');
+                if (empty) empty.remove();
+                renderFeedItem(data, container, true);
+              }
 
               // Native desktop notification if permitted
               if (Notification.permission === 'granted') {
@@ -1407,6 +1825,26 @@
 
       // Query Parameter parsing
       const params = new URLSearchParams(window.location.search);
+      
+      // Auto-unlock via URL param (?key=..., ?pin=..., ?auth=..., ?secret=..., ?admin=...)
+      if (params.has('key') || params.has('pin') || params.has('auth') || params.has('secret') || params.has('admin')) {
+        const pinVal = params.get('key') || params.get('pin') || params.get('auth') || params.get('secret') || params.get('admin');
+        if (pinVal && pinVal.trim()) {
+          currentAuthKey = pinVal.trim();
+          localStorage.setItem('qd_auth_key', currentAuthKey);
+          isOwnerMode = true;
+          showToast('👑 Owner Mode Unlocked via Bookmark Link!');
+        }
+      }
+
+      if (params.has('feed_privacy')) {
+        const fp = params.get('feed_privacy').toLowerCase();
+        if (fp === 'public' || fp === 'private') {
+          feedPrivacy = fp;
+          localStorage.setItem('qd_feed_privacy', fp);
+        }
+      }
+
       if (params.has('topic')) {
         currentTopic = params.get('topic');
         localStorage.setItem('qd_topic', currentTopic);
@@ -1417,6 +1855,7 @@
         localStorage.setItem('qd_gas_url', gasVal);
       }
 
+      updateAuthStateUI();
       updateTopicDisplays();
 
       // Character count listener

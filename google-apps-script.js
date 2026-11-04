@@ -9,33 +9,38 @@
  * Target Doc ID: 1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s
  * 
  * PURPOSE:
- * ntfy.sh provides instant push notifications and phone chime, but its free
+ * ntfy.sh provides instant push notifications and phone chimes, but its free
  * cache automatically purges messages after 12 hours. This script turns your
  * private Google Doc into a permanent, searchable archive for every single
  * drop, link, code snippet, and idea you send from any laptop or browser.
  * 
  * ----------------------------------------------------------------------------
- * 🔒 SECURITY & PRIVACY: WHY YOUR GOOGLE DOC REMAINS 100% PRIVATE
+ * 🔒 SECURITY ARCHITECTURE: HOW YOUR GOOGLE DOC IS PROTECTED AGAINST ABUSE
  * ----------------------------------------------------------------------------
- * 1. KEEP YOUR DOC "RESTRICTED" (IMPORTANT):
- *    In Google Docs, click the blue "Share" button. Under "General access",
- *    ensure it is set to "Restricted" (Only Piyush has access).
- *    ⚠️ Do NOT set it to "Anyone with the link can view". It must stay private!
+ * 1. GOOGLE DOC ACCESS IS 100% RESTRICTED:
+ *    In Google Docs, your document is set to "Restricted" (Only Piyush has access).
+ *    Google Search, Bing, and AI crawlers CANNOT see or index your document.
  * 
- * 2. WHY RESTRICTED ACCESS WORKS WITH WEB APPS:
- *    When you deploy this Apps Script Web App, you choose:
- *      "Execute as: Me (your Google account)"
- *    This means Google's cloud executes the script under YOUR identity. It has
- *    native owner permissions to write to your private document without
- *    needing the document to be public or accessible to anyone else.
+ * 2. SECRET ACCESS KEY / PIN AUTHORIZATION LAYER (CRITICAL):
+ *    Deploying an Apps Script Web App with "Who has access: Anyone" is required
+ *    so your browser can reach the endpoint without a Google login popup.
+ *    HOWEVER, THIS SCRIPT ENFORCES AN OWNER ACCESS KEY (`OWNER_SECRET_KEY`):
+ *      - Every write, ping, or test request MUST provide the secret key.
+ *      - Any request from a public visitor, random bot, or malicious user
+ *        WITHOUT the valid key is REJECTED IMMEDIATELY with HTTP 401 Unauthorized.
+ *      - Unauthorized requests NEVER write to or touch your Google Doc!
  * 
- * 3. 100% IMMUNE TO AI CRAWLERS & PUBLIC SEARCH ENGINES:
- *    Because the Google Doc is Restricted:
- *      - Google Search, Bing, and DuckDuckGo CANNOT index it.
- *      - AI scrapers (GPTBot, ClaudeBot, Perplexity, Bytespider) CANNOT crawl it.
- *      - Public users visiting the doc URL get an HTTP 403 / Google Login wall.
- *    Furthermore, this Web App endpoint is strictly WRITE-ONLY; it never
- *    returns or exposes the contents of your document to the web.
+ * 3. PUBLIC VISITOR MODE VS OWNER MODE:
+ *    - Public visitors submitting messages on your website only trigger a push
+ *      notification to your phone via ntfy (marked as [PUBLIC VISITOR]).
+ *      They CANNOT write to your private Google Doc.
+ *    - When YOU enter your Secret PIN in QuickDrop (or use your private bookmarked
+ *      URL with ?key=YOUR_PIN), Owner Mode activates and syncs your notes
+ *      directly to this document.
+ * 
+ * 4. STRICT WRITE-ONLY INTERFACE:
+ *    This Web App is write-only. It never exposes, returns, or reads back the
+ *    contents of your Google Doc to any caller on the web.
  * 
  * ----------------------------------------------------------------------------
  * 🚀 60-SECOND DEPLOYMENT INSTRUCTIONS:
@@ -43,37 +48,22 @@
  * 1. Open: https://script.google.com/home/start (or type script.new in browser)
  * 2. Click "+ New project".
  * 3. Name the project: "QuickDrop-Relay" (top left).
- * 4. Select all existing text in "Code.gs" and REPLACE it with the contents
- *    of this entire file.
- * 5. (Optional quick test): In the function dropdown, select "testDirectAppend"
- *    and click "Run". Click "Review permissions", pick your Google account,
- *    click "Advanced" -> "Go to QuickDrop-Relay (unsafe)" -> click "Allow".
- *    Open your Google Doc — you will see the test note appear immediately!
+ * 4. Replace all code in "Code.gs" with this entire file.
+ * 5. (Important): Set your desired OWNER_SECRET_KEY below (line 88), e.g.:
+ *      var OWNER_SECRET_KEY = 'piyush1624';
  * 6. Click the blue "Deploy" button (top-right) -> choose "New deployment".
  * 7. Click the gear icon (⚙️) next to "Select type" and choose "Web app".
  * 8. Set the configuration:
- *      - Description: "QuickDrop to Google Doc Relay v1"
+ *      - Description: "QuickDrop to Google Doc Relay v2 with Secret Auth"
  *      - Execute as: "Me (<your-email>@gmail.com)"  <-- REQUIRED!
  *      - Who has access: "Anyone"                   <-- REQUIRED!
  * 9. Click "Deploy".
- * 10. Copy the "Web app URL" (ends in /exec, e.g.:
- *      https://script.google.com/macros/s/AKfycb.../exec).
- * 11. Open QuickDrop (drop.html), switch to the "Device Setup" tab, paste
- *      your Web App URL into the "Google Apps Script Web App URL" box, and
- *      click "Save Google Doc URL" (or click "Test Google Doc Sync").
- * 12. Every note you send from QuickDrop will now instantly buzz your phone
- *      via ntfy AND permanently append to your Google Doc!
- * 
- * ----------------------------------------------------------------------------
- * 🧪 TERMINAL VERIFICATION EXAMPLES (OPTIONAL):
- * ----------------------------------------------------------------------------
- * # Quick GET status ping:
- * curl -L "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
- * 
- * # Direct append via curl:
- * curl -L -X POST "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" \
- *   -H "Content-Type: text/plain;charset=utf-8" \
- *   -d '{"title":"Terminal Note","message":"Sent directly via curl!","category":"code"}'
+ * 10. Copy the "Web app URL" (ends in /exec).
+ * 11. Open QuickDrop (drop.html), switch to the "Device Setup" tab:
+ *      - Paste the /exec URL into the "Google Apps Script Web App URL" box.
+ *      - Enter your Secret PIN in the "Owner Secret PIN" box.
+ *      - Click "Save Settings to this Browser".
+ *      - Click "Test Google Doc Sync" to verify write access.
  * ============================================================================
  */
 
@@ -82,6 +72,64 @@ var DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
 
 // Preferred display timezone (Indian Standard Time / Asia/Kolkata)
 var DEFAULT_TIMEZONE = 'Asia/Kolkata';
+
+/**
+ * 🔒 OWNER SECRET AUTHORIZATION KEY
+ * ----------------------------------------------------------------------------
+ * Set your personal secret PIN or passphrase here.
+ * Only requests containing this key can write to your Google Doc!
+ * You can also set this via Script Properties under 'OWNER_SECRET_KEY'.
+ */
+var OWNER_SECRET_KEY = 'piyush1624';
+
+/**
+ * Retrieves the active secret key (checks Script Properties first, then fallback)
+ */
+function getEffectiveSecretKey() {
+  try {
+    var prop = PropertiesService.getScriptProperties().getProperty('OWNER_SECRET_KEY');
+    if (prop && prop.trim()) {
+      return prop.trim();
+    }
+  } catch (e) {
+    Logger.log('Property read notice: ' + e);
+  }
+  return OWNER_SECRET_KEY;
+}
+
+/**
+ * Validates whether the incoming payload or query params contain the valid owner key
+ */
+function isAuthorized(payload, e) {
+  var activeSecret = getEffectiveSecretKey();
+  
+  // If no secret is configured, allow writes (unprotected mode)
+  if (!activeSecret || activeSecret.trim() === '') {
+    return { authorized: true };
+  }
+
+  // Extract key from JSON payload, form data, or URL query parameters
+  var providedKey = '';
+  if (payload) {
+    providedKey = payload.authKey || payload.key || payload.pin || payload.token || payload.secret || payload.access_key || '';
+  }
+  if (!providedKey && e && e.parameter) {
+    providedKey = e.parameter.authKey || e.parameter.key || e.parameter.pin || e.parameter.token || e.parameter.secret || '';
+  }
+
+  if (typeof providedKey === 'string') {
+    providedKey = providedKey.trim();
+  }
+
+  if (providedKey && providedKey === activeSecret.trim()) {
+    return { authorized: true };
+  }
+
+  return {
+    authorized: false,
+    reason: providedKey ? 'Invalid Owner Secret Key' : 'Missing Owner Secret Key'
+  };
+}
 
 /**
  * HTTP POST Handler — Receives drops and appends them to the Google Doc
@@ -94,6 +142,7 @@ function doPost(e) {
   } catch (lockErr) {
     return createJsonResponse({
       status: 'error',
+      code: 503,
       message: 'Server busy: Could not acquire lock within 30 seconds.'
     });
   }
@@ -122,21 +171,35 @@ function doPost(e) {
       ? payload.docId.trim()
       : DEFAULT_DOC_ID;
 
-    // 2. Healthcheck ping action (does not write to document)
+    // 2. Healthcheck ping action (non-writing status check)
     if (payload.action === 'ping') {
+      var authCheck = isAuthorized(payload, e);
       return createJsonResponse({
         status: 'success',
-        message: 'QuickDrop Google Apps Script Relay is online and connected!',
+        message: 'QuickDrop Permanent Relay is online and reachable!',
+        authRequired: Boolean(getEffectiveSecretKey()),
+        authorized: authCheck.authorized,
         docId: targetDocId,
         timestamp: new Date().toISOString()
       });
     }
 
-    // 3. Test connection action: writes a real verification note to verify write permissions
+    // 3. SECURITY GATE: Require valid Owner Secret Key before performing ANY write
+    var auth = isAuthorized(payload, e);
+    if (!auth.authorized) {
+      return createJsonResponse({
+        status: 'unauthorized',
+        code: 401,
+        message: 'Access Denied: ' + auth.reason + '. Writes to Piyush\'s Google Doc require the Owner Secret PIN.',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // 4. Test connection action: writes a real verification note
     if (payload.action === 'test_connection') {
       var testResult = appendNoteToGoogleDoc(targetDocId, {
         title: payload.title || 'QuickDrop Connection Verification',
-        message: payload.message || 'QuickDrop successfully connected to your Google Doc! Notes dropped from any browser will now be permanently preserved here.',
+        message: payload.message || 'QuickDrop successfully connected to your Google Doc with verified Owner PIN! Notes dropped from authorized browsers will be permanently preserved here.',
         sender: payload.sender || 'QuickDrop Verification Test',
         category: payload.category || 'idea',
         timezone: payload.timezone
@@ -150,7 +213,7 @@ function doPost(e) {
       });
     }
 
-    // 4. Standard Note Payload
+    // 5. Standard Note Payload
     var noteData = {
       title: payload.title || 'QuickDrop Note',
       message: payload.message || '',
@@ -165,6 +228,7 @@ function doPost(e) {
     if (!noteData.message && !noteData.url && (!noteData.title || noteData.title === 'QuickDrop Note')) {
       return createJsonResponse({
         status: 'error',
+        code: 400,
         message: 'Empty payload: No message or URL provided.'
       });
     }
@@ -183,6 +247,7 @@ function doPost(e) {
   } catch (err) {
     return createJsonResponse({
       status: 'error',
+      code: 500,
       message: 'Failed to append note: ' + err.toString()
     });
   } finally {
@@ -194,12 +259,22 @@ function doPost(e) {
  * HTTP GET Handler — Friendly status page & browser diagnostic
  */
 function doGet(e) {
-  // Support quick test via browser: ?test=1
+  // Support quick test via browser: ?test=1&key=YOUR_PIN
   if (e && e.parameter && e.parameter.test === '1') {
+    var auth = isAuthorized(null, e);
+    if (!auth.authorized) {
+      return createJsonResponse({
+        status: 'unauthorized',
+        code: 401,
+        message: 'Access Denied: ' + auth.reason + '. Provide ?key=YOUR_PIN to run test write.',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     try {
       var testResult = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
         title: 'QuickDrop Browser Test Ping',
-        message: 'This is a test entry confirming your Google Apps Script relay is properly connected to your document.',
+        message: 'This is a test entry confirming your Google Apps Script relay is properly connected with verified Owner PIN.',
         sender: 'Browser GET Test',
         category: 'idea'
       });
@@ -212,16 +287,19 @@ function doGet(e) {
     } catch (err) {
       return createJsonResponse({
         status: 'error',
+        code: 500,
         message: err.toString()
       });
     }
   }
 
+  var activeSecret = getEffectiveSecretKey();
   return createJsonResponse({
     status: 'online',
     service: 'QuickDrop Google Doc Permanent Relay',
     targetDocId: DEFAULT_DOC_ID,
-    instruction: 'Send an HTTP POST with JSON { title, message, sender, category, url } to append to your Google Doc.',
+    authProtection: activeSecret ? 'ENABLED (Owner Secret PIN required)' : 'DISABLED (Open relay)',
+    instruction: 'Send an HTTP POST with JSON { authKey, title, message, sender, category, url } to append to your Google Doc.',
     timestamp: new Date().toISOString()
   });
 }
@@ -355,7 +433,7 @@ function createJsonResponse(data) {
 function testDirectAppend() {
   var result = appendNoteToGoogleDoc(DEFAULT_DOC_ID, {
     title: 'Apps Script Direct Verification',
-    message: 'Testing connection directly from Google Apps Script Editor. Your QuickDrop Google Doc relay is operational!',
+    message: 'Testing connection directly from Google Apps Script Editor with Owner PIN. Your QuickDrop Google Doc relay is operational and secure!',
     sender: 'Apps Script Console',
     category: 'idea'
   });
