@@ -316,10 +316,10 @@
           <!-- Private Feed Lock Screen (displayed when Feed is Private and user is in Visitor Mode) -->
           <div id="feed-lock-screen" class="feed-lock-card" style="display: none;">
             <div class="feed-lock-icon">🔒</div>
-            <h3 class="feed-lock-title">Feed is Set to Private</h3>
+            <h3 class="feed-lock-title">🔒 Feed is Private</h3>
             <p class="feed-lock-desc">
-              Piyush has locked this live stream to protect private notes, code snippets, and replies from public visitors.
-              Enter your Owner Secret PIN to unlock the live feed.
+              Piyush has locked this live stream to protect private notes, ideas, and replies.
+              Enter your Secret PIN to view notes and responses.
             </p>
             <div class="feed-lock-form">
               <input type="password" id="feed-pin-input" class="form-input feed-pin-field" placeholder="Owner Secret PIN" autocomplete="current-password" onkeydown="if(event.key==='Enter')unlockFeedWithPin();" />
@@ -596,6 +596,8 @@
     let currentAuthKey = localStorage.getItem('qd_auth_key') || '';
     let feedPrivacy = localStorage.getItem('qd_feed_privacy') || 'private'; // 'private' (default) or 'public'
     let isOwnerMode = Boolean(currentAuthKey && currentAuthKey.trim());
+    window.isOwnerMode = isOwnerMode;
+    window.feedPrivacy = feedPrivacy;
     let selectedCategory = 'idea';
     let isMonospace = false;
     let eventSource = null;
@@ -888,8 +890,67 @@
       }
     }
 
+    // Validate Owner PIN against default PIN (piyush1624), local storage, or Google Apps Script Web App
+    async function validateOwnerPin(candidatePin) {
+      if (!candidatePin || !candidatePin.trim()) {
+        return { valid: false, reason: 'Please enter your Owner Secret PIN.' };
+      }
+      const pin = candidatePin.trim();
+      const DEFAULT_PIN = 'piyush1624';
+
+      // 1. Matches default PIN
+      if (pin === DEFAULT_PIN) {
+        return { valid: true, pin: pin };
+      }
+
+      // 2. Matches previously stored authorized PIN in localStorage
+      const savedAuthKey = localStorage.getItem('qd_auth_key');
+      if (savedAuthKey && pin === savedAuthKey.trim()) {
+        return { valid: true, pin: pin };
+      }
+
+      // 3. If Google Apps Script Web App URL is configured, verify remotely
+      const gasUrl = customGasUrl || (document.getElementById('custom-gas-input') ? document.getElementById('custom-gas-input').value.trim() : '');
+      if (gasUrl) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 4000);
+          const verifyUrl = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}action=check_auth&key=${encodeURIComponent(pin)}`;
+          const res = await fetch(verifyUrl, {
+            method: 'GET',
+            redirect: 'follow',
+            signal: controller.signal
+          });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.authorized) {
+              return { valid: true, pin: pin };
+            } else if (data && data.authorized === false) {
+              return { valid: false, reason: data.message || 'Invalid Owner Secret PIN.' };
+            }
+          }
+        } catch (e) {
+          // If network / CORS blocked or timed out, continue to fallback rejection
+        }
+      }
+
+      return { valid: false, reason: 'Incorrect Owner Secret PIN. Access denied.' };
+    }
+
     // Handle feed privacy change from select in Setup tab
     function handleFeedPrivacySelectChange(val) {
+      if (val === 'public' && !isOwnerMode) {
+        const authInput = document.getElementById('custom-auth-key-input');
+        const pin = authInput ? authInput.value.trim() : currentAuthKey;
+        if (!pin) {
+          showToast('🔒 Switching feed to Public requires the Owner Secret PIN.');
+          const select = document.getElementById('feed-privacy-select');
+          if (select) select.value = 'private';
+          if (authInput) authInput.focus();
+          return;
+        }
+      }
       feedPrivacy = val;
       localStorage.setItem('qd_feed_privacy', val);
       updateAuthStateUI();
@@ -919,7 +980,7 @@
     }
 
     // Unlock Feed with PIN from the Feed Lock Screen
-    function unlockFeedWithPin() {
+    async function unlockFeedWithPin() {
       const pinInput = document.getElementById('feed-pin-input');
       const errEl = document.getElementById('feed-pin-error');
       const val = pinInput ? pinInput.value.trim() : '';
@@ -927,13 +988,32 @@
       if (!val) {
         if (errEl) {
           errEl.textContent = 'Please enter your Owner Secret PIN.';
+          errEl.style.color = 'var(--color-warning)';
           errEl.style.display = 'block';
         }
+        if (pinInput) pinInput.focus();
         return;
       }
 
-      currentAuthKey = val;
-      localStorage.setItem('qd_auth_key', val);
+      if (errEl) {
+        errEl.textContent = 'Verifying Owner PIN...';
+        errEl.style.color = 'var(--text-accent)';
+        errEl.style.display = 'block';
+      }
+
+      const check = await validateOwnerPin(val);
+      if (!check.valid) {
+        if (errEl) {
+          errEl.textContent = `❌ ${check.reason || 'Incorrect Owner Secret PIN. Access denied.'}`;
+          errEl.style.color = 'var(--color-warning)';
+          errEl.style.display = 'block';
+        }
+        if (pinInput) pinInput.focus();
+        return;
+      }
+
+      currentAuthKey = check.pin;
+      localStorage.setItem('qd_auth_key', currentAuthKey);
       isOwnerMode = true;
 
       if (errEl) errEl.style.display = 'none';
@@ -946,18 +1026,34 @@
       showToast('👑 Owner Mode Unlocked! Welcome back, Piyush.');
     }
 
-    // Lock / Exit Owner Mode (clears secret key on public computers)
+    // Lock / Exit Owner Mode (clears secret key on public computers and closes live streams)
     function lockOwnerMode() {
       currentAuthKey = '';
       localStorage.removeItem('qd_auth_key');
       isOwnerMode = false;
+
+      // Close live SSE connection to prevent streaming private notes on shared PC
+      if (eventSource) {
+        try { eventSource.close(); } catch (e) {}
+        eventSource = null;
+      }
+
+      // Clear cached feed list from memory & DOM
+      const feedContainer = document.getElementById('feed-container');
+      if (feedContainer) {
+        feedContainer.innerHTML = '<div class="feed-empty">Feed locked. Enter Owner Secret PIN to view notes.</div>';
+      }
+
+      lastDeliveredData = null;
+
       const authInput = document.getElementById('custom-auth-key-input');
       if (authInput) authInput.value = '';
+
       updateAuthStateUI();
       showToast('🔒 Owner Mode Locked. Device set to Public Visitor Mode.');
     }
 
-    // Copy private bookmark link with embedded ?key=
+    // Copy private bookmark link with embedded ?key= and &gas=
     function copyOwnerBookmarkedLink() {
       const pin = currentAuthKey || (document.getElementById('custom-auth-key-input') ? document.getElementById('custom-auth-key-input').value.trim() : '');
       if (!pin) {
@@ -966,8 +1062,12 @@
         if (authInput) authInput.focus();
         return;
       }
-      const bookmarkUrl = `${window.location.origin}${window.location.pathname}?key=${encodeURIComponent(pin)}`;
-      safeCopy(bookmarkUrl, 'Private Owner URL copied! Bookmark this link on your personal devices.');
+      let bookmarkUrl = `${window.location.origin}${window.location.pathname}?key=${encodeURIComponent(pin)}`;
+      const gas = customGasUrl || (document.getElementById('custom-gas-input') ? document.getElementById('custom-gas-input').value.trim() : '');
+      if (gas) {
+        bookmarkUrl += `&gas=${encodeURIComponent(gas)}`;
+      }
+      safeCopy(bookmarkUrl, 'Private Owner URL copied! Bookmark this link on your personal devices to auto-connect Doc sync and unlock Owner Mode.');
     }
 
     // Test Google Doc sync connection with secret PIN validation
@@ -1015,6 +1115,10 @@
             const data = await res.json();
             if (data.status === 'unauthorized') {
               showToast('❌ Auth Failed: ' + data.message, 6000);
+              return;
+            }
+            if (data.status !== 'success') {
+              showToast('❌ Error: ' + (data.message || 'Verification failed'), 6000);
               return;
             }
             verified = true;
@@ -1145,6 +1249,9 @@
 
     // Refresh auth state, pills, badges, and view permissions across all tabs
     function updateAuthStateUI() {
+      window.isOwnerMode = isOwnerMode;
+      window.feedPrivacy = feedPrivacy;
+
       // 1. Update Mode Pill in Composer
       const modePill = document.getElementById('mode-pill');
       const modeIcon = document.getElementById('mode-icon');
@@ -1324,18 +1431,37 @@
               timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
               timestamp: new Date().toISOString()
             };
-            // Note: mode 'no-cors' with 'text/plain' and 'redirect: follow' ensures POST delivers reliably through Google 302 redirects
-            gasPromise = fetch(customGasUrl, {
-              method: 'POST',
-              mode: 'no-cors',
-              redirect: 'follow',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(gasPayload)
-            }).then(() => {
-              gdocsAppended = true;
-            }).catch(gasErr => {
-              console.warn('Google Doc append warning:', gasErr);
-            });
+            gasPromise = (async () => {
+              try {
+                const res = await fetch(customGasUrl, {
+                  method: 'POST',
+                  redirect: 'follow',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify(gasPayload)
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.status === 'success') {
+                    gdocsAppended = true;
+                    return true;
+                  } else if (data && data.status === 'unauthorized') {
+                    console.warn('Google Doc rejected write (Unauthorized):', data.message);
+                    return false;
+                  }
+                }
+              } catch (corsErr) {
+                // If browser blocked cross-origin redirect read, fire via mode: 'no-cors'
+                await fetch(customGasUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  redirect: 'follow',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify(gasPayload)
+                });
+                gdocsAppended = true;
+                return true;
+              }
+            })();
           } catch (gasSetupErr) {
             console.warn('Google Doc setup error:', gasSetupErr);
           }
@@ -1804,6 +1930,10 @@
 
     // Request native browser notifications
     async function requestBrowserNotifications() {
+      if (feedPrivacy === 'private' && !isOwnerMode) {
+        showToast('🔒 Feed is private. Enter your Owner PIN to enable live notifications.');
+        return;
+      }
       if (!('Notification' in window)) {
         showToast('Browser notifications not supported.');
         return;
@@ -1830,10 +1960,17 @@
       if (params.has('key') || params.has('pin') || params.has('auth') || params.has('secret') || params.has('admin')) {
         const pinVal = params.get('key') || params.get('pin') || params.get('auth') || params.get('secret') || params.get('admin');
         if (pinVal && pinVal.trim()) {
-          currentAuthKey = pinVal.trim();
-          localStorage.setItem('qd_auth_key', currentAuthKey);
-          isOwnerMode = true;
-          showToast('👑 Owner Mode Unlocked via Bookmark Link!');
+          validateOwnerPin(pinVal.trim()).then(check => {
+            if (check.valid) {
+              currentAuthKey = check.pin;
+              localStorage.setItem('qd_auth_key', currentAuthKey);
+              isOwnerMode = true;
+              updateAuthStateUI();
+              showToast('👑 Owner Mode Unlocked via Bookmark Link!');
+            } else {
+              showToast('⚠️ Owner PIN from URL was rejected: ' + (check.reason || 'Invalid PIN'), 4500);
+            }
+          });
         }
       }
 

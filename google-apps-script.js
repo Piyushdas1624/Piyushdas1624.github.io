@@ -83,11 +83,15 @@ var DEFAULT_TIMEZONE = 'Asia/Kolkata';
 var OWNER_SECRET_KEY = 'piyush1624';
 
 /**
- * Retrieves the active secret key (checks Script Properties first, then fallback)
+ * Retrieves the active secret key (checks Script Properties first: AUTH_KEY, ACCESS_KEY, OWNER_SECRET_KEY, then fallback)
  */
 function getEffectiveSecretKey() {
   try {
-    var prop = PropertiesService.getScriptProperties().getProperty('OWNER_SECRET_KEY');
+    var props = PropertiesService.getScriptProperties();
+    var prop = props.getProperty('AUTH_KEY') || 
+               props.getProperty('ACCESS_KEY') || 
+               props.getProperty('OWNER_SECRET_KEY') || 
+               props.getProperty('SECRET_KEY');
     if (prop && prop.trim()) {
       return prop.trim();
     }
@@ -104,21 +108,29 @@ function isAuthorized(payload, e) {
   var activeSecret = getEffectiveSecretKey();
   
   // If no secret is configured, allow writes (unprotected mode)
-  if (!activeSecret || activeSecret.trim() === '') {
+  if (!activeSecret || !activeSecret.trim()) {
     return { authorized: true };
   }
 
   // Extract key from JSON payload, form data, or URL query parameters
   var providedKey = '';
   if (payload) {
-    providedKey = payload.authKey || payload.key || payload.pin || payload.token || payload.secret || payload.access_key || '';
+    providedKey = payload.authKey || payload.auth_key || payload.key || 
+                  payload.pin || payload.token || payload.secret || 
+                  payload.access_key || payload.accessKey || 
+                  payload.ACCESS_KEY || payload.AUTH_KEY || '';
   }
   if (!providedKey && e && e.parameter) {
-    providedKey = e.parameter.authKey || e.parameter.key || e.parameter.pin || e.parameter.token || e.parameter.secret || '';
+    providedKey = e.parameter.authKey || e.parameter.auth_key || e.parameter.key || 
+                  e.parameter.pin || e.parameter.token || e.parameter.secret || 
+                  e.parameter.access_key || e.parameter.accessKey || 
+                  e.parameter.ACCESS_KEY || e.parameter.AUTH_KEY || '';
   }
 
-  if (typeof providedKey === 'string') {
-    providedKey = providedKey.trim();
+  if (providedKey !== undefined && providedKey !== null) {
+    providedKey = String(providedKey).trim();
+  } else {
+    providedKey = '';
   }
 
   if (providedKey && providedKey === activeSecret.trim()) {
@@ -171,12 +183,15 @@ function doPost(e) {
       ? payload.docId.trim()
       : DEFAULT_DOC_ID;
 
-    // 2. Healthcheck ping action (non-writing status check)
-    if (payload.action === 'ping') {
+    // 2. Healthcheck ping & auth check action (non-writing status check)
+    if (payload.action === 'ping' || payload.action === 'check_auth') {
       var authCheck = isAuthorized(payload, e);
       return createJsonResponse({
-        status: 'success',
-        message: 'QuickDrop Permanent Relay is online and reachable!',
+        status: authCheck.authorized ? 'success' : 'unauthorized',
+        code: authCheck.authorized ? 200 : 401,
+        message: authCheck.authorized 
+          ? 'QuickDrop Permanent Relay is online and Owner PIN is verified!' 
+          : 'Access Denied: ' + authCheck.reason,
         authRequired: Boolean(getEffectiveSecretKey()),
         authorized: authCheck.authorized,
         docId: targetDocId,
@@ -259,6 +274,20 @@ function doPost(e) {
  * HTTP GET Handler — Friendly status page & browser diagnostic
  */
 function doGet(e) {
+  // Support remote PIN verification & health ping: ?action=check_auth&key=YOUR_PIN or ?action=ping&key=...
+  if (e && e.parameter && (e.parameter.action === 'check_auth' || e.parameter.action === 'ping' || e.parameter.check === '1')) {
+    var check = isAuthorized(null, e);
+    return createJsonResponse({
+      status: check.authorized ? 'success' : 'unauthorized',
+      code: check.authorized ? 200 : 401,
+      authorized: check.authorized,
+      message: check.authorized ? 'Owner PIN verified successfully' : 'Access Denied: ' + check.reason,
+      authRequired: Boolean(getEffectiveSecretKey()),
+      targetDocId: DEFAULT_DOC_ID,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   // Support quick test via browser: ?test=1&key=YOUR_PIN
   if (e && e.parameter && e.parameter.test === '1') {
     var auth = isAuthorized(null, e);
