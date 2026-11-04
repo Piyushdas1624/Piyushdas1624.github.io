@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Search Engine & AI Crawler Privacy Controls -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow">
+
   <!-- Title & SEO -->
   <title>QuickDrop — Send Instant Note or Link to Piyush</title>
   <meta name="description" content="Instant one-way and two-way message, idea, code, and link relay. Send a note from any random laptop or browser straight to Piyush's devices without logging in.">
@@ -107,6 +111,10 @@
               <span id="receipt-route">Instant Push via ntfy.sh</span>
             </div>
             <div class="receipt-row">
+              <span>Google Doc Archive:</span>
+              <span id="receipt-doc-status" style="color: var(--text-tertiary);">Checking...</span>
+            </div>
+            <div class="receipt-row">
               <span>Target Topic:</span>
               <span id="receipt-topic">piyush-drop-1624</span>
             </div>
@@ -130,6 +138,9 @@
             <button type="button" class="btn btn-secondary" onclick="copyReceipt()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
               📋 Copy receipt
             </button>
+            <a id="receipt-doc-link" href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); display: none; color: var(--text-accent); border-color: var(--border-accent);">
+              📄 Open Google Doc ↗
+            </a>
             <button type="button" class="btn btn-secondary" onclick="switchDropTab('feed')" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
               📡 View Live Feed &amp; Responses
             </button>
@@ -140,12 +151,16 @@
         <div class="drop-card reveal">
           <div class="drop-card-glow" aria-hidden="true"></div>
 
-          <div class="drop-badge-row">
+          <div class="drop-badge-row" style="flex-wrap: wrap; gap: var(--space-2);">
             <div class="status-indicator">
               <span class="status-pulse" aria-hidden="true"></span>
-              Relay Ready &bull; Instant Push Active
+              <span>Relay Ready &bull; Instant Push</span>
             </div>
-            <span style="font-size: var(--text-xs); color: var(--text-tertiary); font-family: var(--font-mono);">
+            <div id="doc-sync-pill" class="status-indicator" style="background: rgba(255, 255, 255, 0.04); font-size: 11px;">
+              <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--color-warning); margin-right:4px;" id="doc-sync-dot"></span>
+              <span id="doc-sync-text">Doc Sync: Checking...</span>
+            </div>
+            <span style="font-size: var(--text-xs); color: var(--text-tertiary); font-family: var(--font-mono); margin-left: auto;">
               Channel: <span id="display-topic" style="color: var(--text-accent);">piyush-drop-1624</span>
             </span>
           </div>
@@ -342,9 +357,81 @@
             </a>
           </div>
 
+          <!-- 4. Permanent Google Doc Storage (100% Private, Zero 12h Expiration) -->
+          <div class="info-box" style="border-color: rgba(99, 102, 241, 0.35); background: rgba(99, 102, 241, 0.05);">
+            <div class="info-box-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+              <span style="display: inline-flex; align-items: center; gap: var(--space-2);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                4. Permanent Google Doc Storage (Zero Expiration)
+              </span>
+              <span id="setup-gas-status" class="badge" style="background: rgba(251, 191, 36, 0.15); color: var(--color-warning); border: 1px solid rgba(251, 191, 36, 0.3);">
+                ⚠️ Not Configured (12h Ntfy Cache Only)
+              </span>
+            </div>
+
+            <p class="info-box-desc" style="margin-top: var(--space-2); margin-bottom: var(--space-3);">
+              <strong>Why this matters:</strong> Messages sent via ntfy.sh stay in the cache for <strong>12 hours</strong> for push notifications and feed sync, after which they are automatically wiped.
+              Connecting your private Google Doc creates a <strong>permanent, searchable chronological log</strong> of every single note, code snippet, and link you ever drop.
+            </p>
+
+            <div class="form-group" style="margin-bottom: var(--space-3);">
+              <label class="form-label" for="custom-gas-input" style="font-weight: 500;">
+                Google Apps Script Web App URL:
+              </label>
+              <input type="url" id="custom-gas-input" class="form-input" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs);" />
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-tertiary);">
+                <span>Target Doc ID: <code style="color: var(--text-accent);">1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s</code></span>
+                <a href="https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">
+                  📄 Open Target Google Doc ↗
+                </a>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4);">
+              <button type="button" class="btn btn-secondary" onclick="saveCustomSettings()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4); border-color: var(--border-accent); color: var(--text-accent);">
+                💾 Save Google Doc URL
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="testGoogleDocSync()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                🧪 Test Google Doc Sync
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="copyGasScriptCode()" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                📋 Copy Apps Script Code
+              </button>
+            </div>
+
+            <!-- Privacy & Anti-Crawler Explainer -->
+            <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3);">
+              <div style="font-size: var(--text-xs); font-weight: 600; color: var(--color-success); margin-bottom: var(--space-2); display: flex; align-items: center; gap: var(--space-2);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                100% Private &amp; Immune to AI Crawlers:
+              </div>
+              <ul style="font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; margin: 0; padding-left: var(--space-4);">
+                <li><strong>Your Google Doc stays "Restricted":</strong> Only you (Piyush) can open or view the document. You never need to set it to public or share it.</li>
+                <li><strong>Runs under your identity ("Execute as: Me"):</strong> The Google Apps Script executes with your account permissions on Google's cloud. It writes directly to your private doc without opening it to anyone else.</li>
+                <li><strong>Blocked from AI Web Crawlers:</strong> Search engines, GPTBot, ClaudeBot, and public web scrapers cannot crawl, view, or scrape your private Google Doc.</li>
+                <li><strong>Write-Only Endpoint:</strong> QuickDrop only transmits new drop payloads into the document; it never exposes or reads back your document's contents.</li>
+              </ul>
+            </div>
+
+            <!-- 60-Second Setup Instructions -->
+            <details style="font-size: var(--text-xs); color: var(--text-secondary); cursor: pointer;">
+              <summary style="font-weight: 600; color: var(--text-accent); padding: var(--space-1) 0;">
+                ▶ Click here for 60-second setup instructions (Deploy in script.google.com)
+              </summary>
+              <ol style="margin-top: var(--space-2); padding-left: var(--space-4); line-height: 1.7;">
+                <li>Open <a href="https://script.google.com/home/start" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">script.google.com</a> (or <code>script.new</code>) and click <strong>+ New project</strong>.</li>
+                <li>Name the project <code>QuickDrop-Relay</code>.</li>
+                <li>Replace the code in <code>Code.gs</code> with the code from <a href="google-apps-script.js" target="_blank" style="color: var(--accent); text-decoration: underline;"><code>google-apps-script.js</code></a> (click the "Copy Apps Script Code" button above).</li>
+                <li>Click <strong>Deploy &gt; New deployment</strong>. Click the gear ⚙️ icon &gt; select <strong>Web app</strong>.</li>
+                <li>Set <strong>Execute as:</strong> <code>Me (your Google email)</code> and <strong>Who has access:</strong> <code>Anyone</code>.</li>
+                <li>Click <strong>Deploy</strong>, authorize Google permissions, copy the <strong>Web app URL</strong>, and paste it in the box above!</li>
+              </ol>
+            </details>
+          </div>
+
           <div class="info-box">
             <div class="info-box-title">
-              4. Channel Configuration
+              5. Channel Configuration
             </div>
             <p class="info-box-desc" style="margin-bottom: var(--space-3);">
               Customize your channel topic or generate an unguessable private topic key:
@@ -394,8 +481,11 @@
   <script>
     // Configuration
     const DEFAULT_TOPIC = 'piyush-drop-1624';
+    const DEFAULT_DOC_ID = '1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s';
+    const DEFAULT_DOC_URL = 'https://docs.google.com/document/d/1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s/edit?usp=sharing';
     let currentTopic = localStorage.getItem('qd_topic') || DEFAULT_TOPIC;
     let customWebhook = localStorage.getItem('qd_webhook') || '';
+    let customGasUrl = localStorage.getItem('qd_gas_url') || '';
     let selectedCategory = 'idea';
     let isMonospace = false;
     let eventSource = null;
@@ -632,8 +722,59 @@
         showToast('No receipt to copy.');
         return;
       }
-      const text = `QuickDrop Receipt ${lastDeliveredData.id}\nTarget: ${lastDeliveredData.topic}\nTimestamp: ${lastDeliveredData.time}\nSender: ${lastDeliveredData.sender}\nTitle: ${lastDeliveredData.title}\n\n${lastDeliveredData.message}`;
+      const docInfo = customGasUrl ? '\nGoogle Doc Archive: Permanent (1EgAUJU_BNiIBLbvhhdJVwGobhLsErWU_DHWQcnNhn2s)' : '\nGoogle Doc Archive: None (ntfy 12h cache)';
+      const text = `QuickDrop Receipt ${lastDeliveredData.id}\nTarget: ${lastDeliveredData.topic}${docInfo}\nTimestamp: ${lastDeliveredData.time}\nSender: ${lastDeliveredData.sender}\nTitle: ${lastDeliveredData.title}\n\n${lastDeliveredData.message}`;
       safeCopy(text, 'Delivery receipt copied!');
+    }
+
+    // Copy Google Apps Script code to clipboard
+    async function copyGasScriptCode() {
+      try {
+        const res = await fetch('google-apps-script.js');
+        if (res.ok) {
+          const code = await res.text();
+          await safeCopy(code, 'Google Apps Script code copied to clipboard!');
+          return;
+        }
+      } catch (err) {}
+      safeCopy('https://github.com/Piyushdas1624/Piyushdas1624.github.io/blob/main/google-apps-script.js', 'Link to google-apps-script.js copied!');
+    }
+
+    // Test Google Doc sync connection
+    async function testGoogleDocSync() {
+      const gasInput = document.getElementById('custom-gas-input');
+      const testUrl = (gasInput ? gasInput.value.trim() : '') || customGasUrl;
+      if (!testUrl) {
+        showToast('Please enter your Google Apps Script Web App URL first.');
+        if (gasInput) gasInput.focus();
+        return;
+      }
+
+      showToast('Sending test ping to Google Doc...');
+      try {
+        const testPayload = {
+          action: 'test_connection',
+          title: 'QuickDrop Connection Verification',
+          message: 'QuickDrop successfully connected to your Google Doc! Notes dropped from any browser will now be permanently preserved here.',
+          sender: detectDeviceName() + ' (Verification Test)',
+          category: 'idea',
+          docId: DEFAULT_DOC_ID,
+          timestamp: new Date().toISOString()
+        };
+
+        await fetch(testUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(testPayload)
+        });
+
+        playDeliveryChime();
+        showToast('Test signal dispatched to Google Doc!');
+      } catch (err) {
+        console.error('Test error:', err);
+        showToast('Test failed: ' + err.message);
+      }
     }
 
     // Generate private unguessable topic
@@ -648,6 +789,7 @@
     function saveCustomSettings() {
       const topicInput = document.getElementById('custom-topic-input').value.trim();
       const webhookInput = document.getElementById('custom-webhook-input').value.trim();
+      const gasInput = document.getElementById('custom-gas-input') ? document.getElementById('custom-gas-input').value.trim() : '';
 
       if (topicInput) {
         currentTopic = topicInput;
@@ -656,6 +798,10 @@
       if (webhookInput !== undefined) {
         customWebhook = webhookInput;
         localStorage.setItem('qd_webhook', webhookInput);
+      }
+      if (gasInput !== undefined) {
+        customGasUrl = gasInput;
+        localStorage.setItem('qd_gas_url', gasInput);
       }
 
       updateTopicDisplays();
@@ -669,6 +815,43 @@
       document.getElementById('setup-topic-display').textContent = currentTopic;
       document.getElementById('setup-ntfy-link').href = `https://ntfy.sh/${currentTopic}`;
       document.getElementById('setup-ntfy-link').textContent = `https://ntfy.sh/${currentTopic}`;
+      updateDocSyncStatus();
+    }
+
+    function updateDocSyncStatus() {
+      const docSyncPill = document.getElementById('doc-sync-pill');
+      const docSyncDot = document.getElementById('doc-sync-dot');
+      const docSyncText = document.getElementById('doc-sync-text');
+      const setupStatusBadge = document.getElementById('setup-gas-status');
+      const gasInput = document.getElementById('custom-gas-input');
+
+      if (gasInput && customGasUrl && !gasInput.value) {
+        gasInput.value = customGasUrl;
+      }
+
+      if (customGasUrl) {
+        if (docSyncDot) docSyncDot.style.background = 'var(--color-success)';
+        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <span style="color:var(--color-success); font-weight:600;">Active</span>';
+        if (docSyncPill) docSyncPill.title = 'Every note will be permanently appended to your Google Doc.';
+        if (setupStatusBadge) {
+          setupStatusBadge.className = 'badge';
+          setupStatusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+          setupStatusBadge.style.color = 'var(--color-success)';
+          setupStatusBadge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          setupStatusBadge.innerHTML = '✓ Connected to Google Doc (1EgAUJU...)';
+        }
+      } else {
+        if (docSyncDot) docSyncDot.style.background = 'var(--color-warning)';
+        if (docSyncText) docSyncText.innerHTML = 'Doc Sync: <a href="#setup" onclick="switchDropTab(\'setup\')" style="color:var(--color-warning); text-decoration:underline;">Configure</a>';
+        if (docSyncPill) docSyncPill.title = 'Notes currently expire after 12h. Connect your Google Doc in Device Setup.';
+        if (setupStatusBadge) {
+          setupStatusBadge.className = 'badge';
+          setupStatusBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+          setupStatusBadge.style.color = 'var(--color-warning)';
+          setupStatusBadge.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+          setupStatusBadge.innerHTML = '⚠️ Not Configured (12h Ntfy Cache Only)';
+        }
+      }
     }
 
     // Handle Form Submit
@@ -768,6 +951,32 @@
           });
         }
 
+        // ── Permanent Archive to Google Docs via Google Apps Script ────
+        let gdocsAppended = false;
+        if (customGasUrl) {
+          try {
+            const gasPayload = {
+              title: title,
+              message: message,
+              sender: sender,
+              category: selectedCategory,
+              url: firstUrl,
+              docId: DEFAULT_DOC_ID,
+              timestamp: new Date().toISOString()
+            };
+            // Note: mode 'no-cors' with 'text/plain' ensures POST delivers reliably through Google 302 redirects
+            await fetch(customGasUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(gasPayload)
+            });
+            gdocsAppended = true;
+          } catch (gasErr) {
+            console.warn('Google Doc append warning:', gasErr);
+          }
+        }
+
         // Optional Channel: Discord Webhook if configured
         if (customWebhook) {
           const discordPayload = {
@@ -798,6 +1007,10 @@
 
         playDeliveryChime();
 
+        if (customGasUrl) {
+          routeDescription = 'Dual-Dispatch: Instant Push (ntfy.sh) + Permanent Doc Archive (Google Docs)';
+        }
+
         // Generate receipt
         const receiptId = '#QD-' + Math.floor(1000 + Math.random() * 9000);
         const timeStr = new Date().toLocaleTimeString() + ' (' + Intl.DateTimeFormat().resolvedOptions().timeZone + ')';
@@ -809,7 +1022,8 @@
           message: message,
           sender: sender,
           time: timeStr,
-          category: selectedCategory
+          category: selectedCategory,
+          gdocs: gdocsAppended
         };
 
         // Populate and show Receipt Card
@@ -818,6 +1032,19 @@
         document.getElementById('receipt-topic').textContent = currentTopic;
         document.getElementById('receipt-time').textContent = timeStr;
         document.getElementById('receipt-sender').textContent = sender;
+
+        const receiptDocStatus = document.getElementById('receipt-doc-status');
+        const receiptDocLink = document.getElementById('receipt-doc-link');
+        if (receiptDocStatus) {
+          if (customGasUrl) {
+            receiptDocStatus.innerHTML = '<strong style="color: var(--color-success);">✓ Permanently Appended to Google Doc</strong>';
+            if (receiptDocLink) receiptDocLink.style.display = 'inline-flex';
+          } else {
+            receiptDocStatus.innerHTML = '<span style="color: var(--color-warning);">⚠️ 12h Temporary Cache Only (<a href="#setup" onclick="switchDropTab(\'setup\')" style="color: var(--text-accent); text-decoration: underline;">Connect Google Doc</a>)</span>';
+            if (receiptDocLink) receiptDocLink.style.display = 'none';
+          }
+        }
+
         document.getElementById('receipt-preview').textContent = `Subject: ${title}\n\n${message.slice(0, 400)}${message.length > 400 ? '...' : ''}`;
 
         const receiptCard = document.getElementById('receipt-card');
@@ -831,7 +1058,7 @@
         messageInput.value = '';
         titleInput.value = '';
         updateCounters();
-        showToast('Delivered instantly to Piyush!');
+        showToast(customGasUrl ? 'Delivered to phone & saved to Google Doc!' : 'Delivered instantly to Piyush!');
 
       } catch (err) {
         console.error('Error dispatching drop:', err);
@@ -868,6 +1095,23 @@
         if (res.ok) {
           input.value = '';
           playDeliveryChime();
+
+          if (customGasUrl) {
+            fetch(customGasUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                title: `💬 Response from ${sender}`,
+                message: text,
+                sender: sender,
+                category: 'reply',
+                docId: DEFAULT_DOC_ID,
+                timestamp: new Date().toISOString()
+              })
+            }).catch(e => console.warn('Google Doc reply warning:', e));
+          }
+
           showToast('Response sent!');
           setTimeout(fetchRecentDrops, 400);
         } else {
@@ -923,6 +1167,23 @@
 
           if (res.ok) {
             playDeliveryChime();
+
+            if (customGasUrl) {
+              fetch(customGasUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                  title: `↩️ Re: ${item.title || 'Note'}`,
+                  message: replyText,
+                  sender: detectDeviceName(),
+                  category: 'reply',
+                  docId: DEFAULT_DOC_ID,
+                  timestamp: new Date().toISOString()
+                })
+              }).catch(e => console.warn('Google Doc reply warning:', e));
+            }
+
             showToast('Reply dispatched!');
             box.remove();
             setTimeout(fetchRecentDrops, 400);
@@ -1102,6 +1363,11 @@
       if (params.has('topic')) {
         currentTopic = params.get('topic');
         localStorage.setItem('qd_topic', currentTopic);
+      }
+      if (params.has('gas') || params.has('gas_url') || params.has('script')) {
+        const gasVal = params.get('gas') || params.get('gas_url') || params.get('script');
+        customGasUrl = gasVal;
+        localStorage.setItem('qd_gas_url', gasVal);
       }
 
       updateTopicDisplays();

@@ -1,4 +1,68 @@
 User-agent: *
+Disallow: /drop.html
+Disallow: /send.html
+Disallow: /google-apps-script.js
 Allow: /
 
+# -----------------------------------------------------------------------------
+# Comprehensive AI Crawler & Web Scraper Blocking Rules
+# -----------------------------------------------------------------------------
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Anthropic-AI
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Cohere-ai
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: Timpibot
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+# Sitemap
 Sitemap: https://piyushdas1624.github.io/sitemap.xml
